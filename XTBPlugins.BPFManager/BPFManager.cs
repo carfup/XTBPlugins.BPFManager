@@ -61,10 +61,10 @@ namespace Carfup.XTBPlugins.BPFManager
 
         private void IsVersionSupported(ConnectionDetail cd)
         {
-            if (cd == null || cd.UseOnline  || cd.OrganizationMajorVersion >= 9)
+            if (cd == null  || (cd.OrganizationMajorVersion >= 8 && cd.OrganizationMinorVersion >= 2))
                 return;
 
-            MessageBox.Show($"Your Instance version is below 9, plugin won't properly work.");
+            MessageBox.Show($"Your Instance version is below 8.2, plugin won't properly work.");
            
         }
 
