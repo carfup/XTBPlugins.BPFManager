@@ -39,7 +39,7 @@ namespace Carfup.XTBPlugins.BPFManager
         internal PluginSettings settings = new PluginSettings();
         public LogUsage log = null;
 
-        public string RepositoryName => "XTBPlugins.BBPFManager";
+        public string RepositoryName => "XTBPlugins.BPFManager";
         public string UserName => "carfup";
         #endregion
 
