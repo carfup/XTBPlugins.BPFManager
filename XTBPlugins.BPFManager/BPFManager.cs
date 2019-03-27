@@ -1,28 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading;
-using System.Windows.Forms;
-using Carfup.XTBPlugins.AppCode;
-using XrmToolBox.Extensibility;
-using Microsoft.Xrm.Sdk.Query;
-using Microsoft.Xrm.Sdk;
+﻿using Carfup.XTBPlugins.AppCode;
+using Carfup.XTBPlugins.Forms;
 using McTools.Xrm.Connection;
 using Microsoft.Crm.Sdk.Messages;
+using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Messages;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Windows.Forms;
+using XrmToolBox.Extensibility;
 using XrmToolBox.Extensibility.Args;
 using XrmToolBox.Extensibility.Interfaces;
 using EntityReference = Microsoft.Xrm.Sdk.EntityReference;
-using System.Reflection;
-using System.Diagnostics;
-using Carfup.XTBPlugins.AppCode;
-using Carfup.XTBPlugins.Forms;
 
 namespace Carfup.XTBPlugins.BPFManager
 {
-    public partial class BPFManager : PluginControlBase, IMessageBusHost, IGitHubPlugin, IStatusBarMessenger
+    public partial class BPFManager : PluginControlBase, IMessageBusHost, IGitHubPlugin, IStatusBarMessenger, IHelpPlugin, IPayPalPlugin
     {
         #region varibables
         private List<Entity> bpfList = null;
@@ -38,9 +35,14 @@ namespace Carfup.XTBPlugins.BPFManager
         private DataManager dm = null;
         internal PluginSettings settings = new PluginSettings();
         public LogUsage log = null;
+        private int totalRecordToMigrate = 0;
+        private int timePerThousandMigration = 60;
 
         public string RepositoryName => "XTBPlugins.BPFManager";
         public string UserName => "carfup";
+        public string HelpUrl => "https://github.com/carfup/XTBPlugins.BPFManager";
+        public string EmailAccount => "clement@carfup.com";
+        public string DonationDescription => "Thanks a lot for your support, this really mean something to me, and push me to keep going for sure !";
         #endregion
 
         public BPFManager()
@@ -57,15 +59,32 @@ namespace Carfup.XTBPlugins.BPFManager
             IsVersionSupported(detail);
 
             base.UpdateConnection(newService, detail, actionName, parameter);
+
+            if (IsConnectedToEnvironment())
+                radioButtonQueryView.Checked = true;
         }
 
         private void IsVersionSupported(ConnectionDetail cd)
         {
-            if (cd == null  || (cd.OrganizationMajorVersion >= 8 && cd.OrganizationMinorVersion >= 2))
+            if (cd == null  || (cd.OrganizationMajorVersion >= 9 || (cd.OrganizationMajorVersion >= 8 && cd.OrganizationMinorVersion >= 2)))
                 return;
 
             MessageBox.Show($"Your Instance version is below 8.2, plugin won't properly work.");
            
+        }
+
+        private bool IsConnectedToEnvironment()
+        {
+            bool isConnected = this.ConnectionDetail != null;
+
+            comboBoxChooseEntity.Enabled = isConnected;
+            comboBoxChooseView.Enabled = isConnected;
+            btnOpenFXB.Enabled = isConnected;
+
+            if (!isConnected)
+                MessageBox.Show("Make sure you are connected to an instance before proceeding.");
+
+            return isConnected;
         }
 
         public void OnIncomingMessage(MessageBusEventArgs message)
@@ -84,8 +103,13 @@ namespace Carfup.XTBPlugins.BPFManager
             log = new LogUsage(this);
             log.LogData(EventType.Event, LogAction.PluginOpened);
             LoadSetting();
+
+            //displaying the proper control for query
+            radioButtonQueryView.Checked = true;
         }
 
+        private void MakeSureWeConnectToEnvironment() { }
+    
         private void LoadSetting()
         {
             try
@@ -152,6 +176,10 @@ namespace Carfup.XTBPlugins.BPFManager
 
         private void btnRetrieveRecordsFetchQuery_Click(object sender, EventArgs evt)
         {
+
+            if (!IsConnectedToEnvironment())
+                return;
+
             var attributeName = "";
             WorkAsync(new WorkAsyncInfo
             {
@@ -160,7 +188,8 @@ namespace Carfup.XTBPlugins.BPFManager
                 Work = (bw, e) =>
                 {
                     recordToMigrateList = dm.GetRecordsToMigrate(fetchxmlQuery, bw);
-                    attributeName = dm.GetPrimaryNameAttributeOfEntity(recordToMigrateList.FirstOrDefault().LogicalName);
+
+                    userList = dm.GetUsers(bw);
                     //e.Result = this.Service.RetrieveMultiple(new FetchExpression(fetchxmlQuery)).Entities;
                 },
                 PostWorkCallBack = e =>
@@ -172,25 +201,38 @@ namespace Carfup.XTBPlugins.BPFManager
                         return;
                     }
 
-                    checkedListBoxRecordsResult.Items.Clear();
-
                     if (recordToMigrateList.Count == 0)
                     {
-                        MessageBox.Show("Your query has no result");
+                        MessageBox.Show("Your record query has no result");
+                        tbRecordsRetrieved.Text = "";
                         return;
                     }
 
-                    checkedListBoxRecordsResult.Items.AddRange(recordToMigrateList.Select(x => x.Attributes[attributeName]).ToArray());
+                    if (userList.Count == 0)
+                    {
+                        MessageBox.Show("You seem to have no active users on your instance.");
+                        tbRecordsRetrieved.Text = "";
+                        return;
+                    }
+
 
                     recordEntityToMigrate = recordToMigrateList.FirstOrDefault()?.LogicalName;
+                    attributeName = dm.GetPrimaryNameAttributeOfEntity(recordToMigrateList.FirstOrDefault().LogicalName);
 
                     tbRecordsRetrieved.Text =
-                        $"We retrieved {recordToMigrateList.Count} records from {recordToMigrateList.FirstOrDefault()?.LogicalName} entity.";
+                        $"We retrieved {recordToMigrateList.Count} records from {recordToMigrateList.FirstOrDefault()?.LogicalName} entity.{Environment.NewLine}{Environment.NewLine}We retrieved {userList.Count} active users.";
 
                     //Enabling Load BPF button
                     btnLoadBPFs.Enabled = true;
 
                     this.log.LogData(EventType.Event, LogAction.RecordsToMigrateRetrieved);
+
+
+                    totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
+                    int time = (totalRecordToMigrate / 1000) * timePerThousandMigration;
+                    labelNumberOfRecordsToMigrate.Text = $"The migration will handle : {totalRecordToMigrate} records.";
+                    labelTimeEstimation.Text = $"This can take up to {((time < 60) ? "60" : time.ToString())} seconds.";
+                    labelRecordsRemaining.Text = $"{totalRecordToMigrate}";
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
             });
@@ -220,9 +262,6 @@ namespace Carfup.XTBPlugins.BPFManager
                         MessageBox.Show("Your query has no result");
                         return;
                     }
-
-                    checkedListBoxUsersResult.Items.AddRange(userList.Select(x => x.Attributes["fullname"]).ToArray());
-                    tbUsersRetrieved.Text = $"We retrieved {userList.Count} active users.";
 
                     this.log.LogData(EventType.Event, LogAction.UsersRetrieved);
                 },
@@ -272,6 +311,7 @@ namespace Carfup.XTBPlugins.BPFManager
         private void cbTargetBPFList_SelectedIndexChanged(object sender, EventArgs evt)
         {
             cbTargetBPFStages.Items.Clear();
+            cbTargetBPFStages.SelectedIndex = -1;
             stageList = new List<Entity>();
             bpfSelected = bpfList.FirstOrDefault(x => x.Attributes["name"] == cbTargetBPFList.SelectedItem);
 
@@ -312,10 +352,12 @@ namespace Carfup.XTBPlugins.BPFManager
 
         private void cbTargetBPFStages_SelectedIndexChanged(object sender, EventArgs e)
         {
-                btnMigrateRecordBPF.Enabled = cbTargetBPFStages.SelectedItem != "";
+            if (cbTargetBPFStages.SelectedIndex == -1) return;
 
-                if (recordToMigrateList != null && userList!= null && cbTargetBPFStages.SelectedItem != "" &&
-                    cbTargetBPFList.SelectedItem != "")
+            btnMigrateRecordBPF.Enabled = (cbTargetBPFStages.SelectedItem != null || cbTargetBPFStages.SelectedItem != "");
+
+                if (recordToMigrateList != null && userList!= null && cbTargetBPFStages.SelectedItem != null &&
+                    cbTargetBPFList.SelectedItem != null)
                     btnMigrateRecordBPF.Enabled = true;
         }
 
@@ -360,8 +402,11 @@ namespace Carfup.XTBPlugins.BPFManager
             var totalRecordMigrated = 0;
             var totalRecordInstanced = 0;
             var totalRecordUpdated = 0;
-            int totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
+            totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
+            pictureBoxPatience.Visible = true;
+
+            // Init progressBar
 
             SendMessageToStatusBar(this, new StatusBarMessageEventArgs(0, "Migrating ..."));
 
@@ -375,8 +420,8 @@ namespace Carfup.XTBPlugins.BPFManager
                     foreach (var user in userList)
                     {
                         var numberOfRecordsToProceed = recordToMigrateList.Count;
-                        var recordInstanced = 1;
-                        var recordUpdated = 1;
+                        var recordInstanced = 0;
+                        var recordUpdated = 0;
 
                         var executeMultipleRequestSetBPF = new ExecuteMultipleRequest()
                         {
@@ -407,7 +452,7 @@ namespace Carfup.XTBPlugins.BPFManager
                                 ExecuteMultipleRequestBPF(user.Id, ref executeMultipleRequestSetBPF, bw,
                                     recordInstanced, userProceed, "instanced");
                                 progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
-                                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));
+                                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));                                
                             }
                         }
 
@@ -431,8 +476,19 @@ namespace Carfup.XTBPlugins.BPFManager
                             // So we do it only once
                             if(resultQueryProperBPF == null)
                             {
-                                resultQueryProperBPF = this.dm.GetProperBPFList(bpfSelectedEntityTarget,
-                                    recordToMigrateList, attrForCondition);
+                                try
+                                {
+                                    resultQueryProperBPF = this.dm.GetProperBPFList(bpfSelectedEntityTarget,
+                                        recordToMigrateList, attrForCondition);
+                                }
+                                catch (Exception exception)
+                                {
+                                    var result = MessageBox.Show(exception.Message, "Error during migration !",
+                                        MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+
+                                    if (result == DialogResult.No)
+                                        return;
+                                }
                             }
 
                             var wantedBPFInstanceREcord = resultQueryProperBPF.FirstOrDefault(x => ((EntityReference)x.Attributes[attrForCondition]).Id == record.Id);
@@ -485,13 +541,19 @@ namespace Carfup.XTBPlugins.BPFManager
                             totalRecordMigrated++;
                             totalRecordUpdated++;
 
-                            if (recordInstanced % this.settings.NumberOfRecordPerRound == 0 || numberOfRecordsToProceed == recordUpdated)
+                            if (totalRecordUpdated % this.settings.NumberOfRecordPerRound == 0 || numberOfRecordsToProceed == recordUpdated)
                             {
-                                ExecuteMultipleRequestBPF(user.Id, ref executeMultipleRequestSetBPF, bw,
+                                ExecuteMultipleRequestBPF(user.Id, ref executeMultipleRequestUpdateBPF, bw,
                                     recordUpdated, userProceed, "updated", false);
                                 progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
                                 SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));
+                                
                             }
+
+                            Invoke(new Action(() =>
+                            {
+                                labelRecordsRemaining.Text = $@"{totalRecordToMigrate - totalRecordMigrated}";
+                            }));
                         }
 
                         userProceed++;
@@ -513,6 +575,8 @@ namespace Carfup.XTBPlugins.BPFManager
                     MessageBox.Show($"You migrated {totalRecordMigrated} records !");
                     SendMessageToStatusBar(this, new StatusBarMessageEventArgs("done!."));
                     this.log.LogData(EventType.Event, LogAction.RecordsMigrated);
+
+                    pictureBoxPatience.Visible = false;
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
             });
@@ -521,16 +585,25 @@ namespace Carfup.XTBPlugins.BPFManager
         public void ExecuteMultipleRequestBPF(Guid userId,  ref ExecuteMultipleRequest executeMultipleRequestSetBPF, BackgroundWorker bw, int number, int userProceed, string text, bool impersonate = true)
         {
             ExecuteMultipleResponse executeMultipleResponse = null;
-            if (impersonate)
+            try
             {
-                var proxy = (OrganizationServiceProxy) this.Service;
-                proxy.CallerId = userId;
-                executeMultipleResponse = (ExecuteMultipleResponse) proxy.Execute(executeMultipleRequestSetBPF);
+                if (impersonate)
+                {
+                    var proxy = (OrganizationServiceProxy)this.Service;
+                    proxy.CallerId = userId;
+                    executeMultipleResponse = (ExecuteMultipleResponse)proxy.Execute(executeMultipleRequestSetBPF);
+                }
+                else
+                {
+                    executeMultipleResponse = (ExecuteMultipleResponse)this.Service.Execute(executeMultipleRequestSetBPF);
+                }
             }
-            else
+            catch (Exception e)
             {
-                executeMultipleResponse = (ExecuteMultipleResponse)this.Service.Execute(executeMultipleRequestSetBPF);
+                Console.WriteLine(e);
+                throw;
             }
+            
 
             foreach (var responseItem in executeMultipleResponse.Responses)
             {
@@ -555,7 +628,7 @@ namespace Carfup.XTBPlugins.BPFManager
                 Requests = new OrganizationRequestCollection()
             };
             
-            bw?.ReportProgress(0, $"Processing user {userProceed}/{userList.Count} ...{Environment.NewLine}{number} business process flows {text}");
+            bw?.ReportProgress(0, $"Processing user {userProceed}/{userList.Count} ...{Environment.NewLine}{number} business process flows {text}");   
         }
 
         private void radioButtonBuildQuery_CheckedChanged(object sender, EventArgs e)
@@ -564,6 +637,68 @@ namespace Carfup.XTBPlugins.BPFManager
         }
 
         private void radioButtonQueryView_CheckedChanged(object sender, EventArgs evt)
+        {
+            ManageQueryTypeToDisplay();
+            comboBoxChooseEntity.Items.Clear();
+            ExecuteMethod(LoadEntityWithBPF);
+        }
+
+        public void ManageQueryTypeToDisplay()
+        {
+            btnOpenFXB.Visible = radioButtonBuildQuery.Checked;
+            labelChooseEntity.Visible = radioButtonQueryView.Checked;
+            labelChooseView.Visible = radioButtonQueryView.Checked;
+            comboBoxChooseEntity.Visible = radioButtonQueryView.Checked;
+            comboBoxChooseView.Visible = radioButtonQueryView.Checked;
+        }
+
+        private void comboBoxChooseEntity_Click(object sender, EventArgs e)
+        {
+            if (comboBoxChooseEntity.Items.Count == 0)
+                ExecuteMethod(LoadEntityWithBPF);
+        }
+
+        private void comboBoxChooseEntity_SelectedIndexChanged(object sender, EventArgs evt)
+        {
+            entityViews = new List<Entity>();
+            comboBoxChooseView.Items.Clear();
+            comboBoxChooseView.SelectedIndex = -1;
+            WorkAsync(new WorkAsyncInfo
+            {
+                Message = "Looking for entity views...",
+                Work = (bw, e) =>
+                {
+                    Invoke(new Action(() =>
+                    {
+                        e.Result = dm.GetViewsOfEntity(comboBoxChooseEntity.SelectedItem.ToString());
+                    }));
+                },
+                PostWorkCallBack = e =>
+                {
+                    if (e.Error != null)
+                    {
+                        MessageBox.Show(this, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        this.log.LogData(EventType.Exception, LogAction.BPFEntityViewsRetrieved, e.Error);
+                        return;
+                    }
+
+                    var result = e.Result as List<Entity>;
+
+                    if (result.Count == 0)
+                    {
+                        MessageBox.Show("Your query has no result");
+                        return;
+                    }
+
+                    entityViews.AddRange(result);
+                    comboBoxChooseView.Items.AddRange(result.Select(x => x.Attributes["name"]).ToArray());
+                    this.log.LogData(EventType.Event, LogAction.BPFEntityViewsRetrieved);
+                },
+                ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
+            });
+        }
+
+        public void LoadEntityWithBPF()
         {
             ManageQueryTypeToDisplay();
             comboBoxChooseEntity.Items.Clear();
@@ -600,57 +735,11 @@ namespace Carfup.XTBPlugins.BPFManager
             });
         }
 
-        public void ManageQueryTypeToDisplay()
-        {
-            btnOpenFXB.Visible = radioButtonBuildQuery.Checked;
-            labelChooseEntity.Visible = radioButtonQueryView.Checked;
-            labelChooseView.Visible = radioButtonQueryView.Checked;
-            comboBoxChooseEntity.Visible = radioButtonQueryView.Checked;
-            comboBoxChooseView.Visible = radioButtonQueryView.Checked;
-        }
-
-        private void comboBoxChooseEntity_SelectedIndexChanged(object sender, EventArgs evt)
-        {
-            entityViews = new List<Entity>();
-            comboBoxChooseView.Items.Clear();
-            comboBoxChooseView.SelectedItem = null;
-            WorkAsync(new WorkAsyncInfo
-            {
-                Message = "Looking for entity views...",
-                Work = (bw, e) =>
-                {
-                    Invoke(new Action(() =>
-                    {
-                        e.Result = dm.GetViewsOfEntity(comboBoxChooseEntity.SelectedItem.ToString());
-                    }));
-                },
-                PostWorkCallBack = e =>
-                {
-                    if (e.Error != null)
-                    {
-                        MessageBox.Show(this, e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        this.log.LogData(EventType.Exception, LogAction.BPFEntityViewsRetrieved, e.Error);
-                        return;
-                    }
-
-                    var result = e.Result as List<Entity>;
-
-                    if (result.Count == 0)
-                    {
-                        MessageBox.Show("Your query has no result");
-                        return;
-                    }
-
-                    entityViews.AddRange(result);
-                    comboBoxChooseView.Items.AddRange(result.Select(x => x.Attributes["name"]).ToArray());
-                    this.log.LogData(EventType.Event, LogAction.BPFEntityViewsRetrieved);
-                },
-                ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
-            });
-        }
-
         private void comboBoxChooseView_SelectedIndexChanged(object sender, EventArgs e)
         {
+            if (comboBoxChooseView.SelectedIndex == -1)
+                return;
+
             var selectedView = entityViews.FirstOrDefault(x => x.Attributes["name"] == comboBoxChooseView.SelectedItem);
             fetchxmlQuery = selectedView.GetAttributeValue<string>("fetchxml");
 
@@ -689,5 +778,7 @@ namespace Carfup.XTBPlugins.BPFManager
                 }
             }
         }
+
+        
     }
 }

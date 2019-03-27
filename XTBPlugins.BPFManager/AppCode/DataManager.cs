@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Crm.Sdk.Messages;
@@ -141,6 +142,22 @@ namespace Carfup.XTBPlugins.AppCode
             int total = 0;
             do
             {
+                try
+                {
+                    ec = service.RetrieveMultiple(query);
+                    total += ec.Entities.Count;
+                    query.PageInfo.PageNumber++;
+                    query.PageInfo.PagingCookie = ec.PagingCookie;
+
+                    resultQueryProperBPF.AddRange(ec.Entities);
+                }
+                catch (FaultException<OrganizationServiceFault> ex)
+                {
+                    if(ex.Message.Contains("is missing prv"))
+                        throw new Exception($"One or more users are unable to access the Target BPF.{Environment.NewLine}Ensure permissions are set before proceeding.{Environment.NewLine}{Environment.NewLine}Would you like to proceed ?");
+
+                    throw;
+                }
                 ec = service.RetrieveMultiple(query);
                 total += ec.Entities.Count;
                 query.PageInfo.PageNumber++;
