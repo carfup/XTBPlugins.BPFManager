@@ -107,8 +107,6 @@ namespace Carfup.XTBPlugins.BPFManager
             //displaying the proper control for query
             radioButtonQueryView.Checked = true;
         }
-
-        private void MakeSureWeConnectToEnvironment() { }
     
         private void LoadSetting()
         {
@@ -150,17 +148,6 @@ namespace Carfup.XTBPlugins.BPFManager
             SaveSettings();
             this.log.Flush();
             CloseTool();
-        }
-        
-        /// <summary>
-        /// This event occurs when the plugin is closed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MyPluginControl_OnCloseTool(object sender, EventArgs e)
-        {
-            // Before leaving, save the settings
-            //SettingsManager.Instance.Save(GetType(), mySettings);
         }
 
         private void btnOpenFXB_Click(object sender, EventArgs e)
@@ -404,7 +391,8 @@ namespace Carfup.XTBPlugins.BPFManager
             var totalRecordUpdated = 0;
             totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
-            pictureBoxPatience.Visible = true;
+
+            manageEnablingOfControls(false);
 
             // Init progressBar
 
@@ -413,12 +401,19 @@ namespace Carfup.XTBPlugins.BPFManager
             WorkAsync(new WorkAsyncInfo
             {
                 Message = $"Migrating the Business Process flows for each users and records {Environment.NewLine}May take a moment ...",
+                IsCancelable = true,
                 Work = (bw, e) =>
                 {
                     var userProceed = 1;
                     int progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
                     foreach (var user in userList)
                     {
+                        if (bw.CancellationPending)
+                        {
+                            e.Cancel = true;
+                            break;
+                        }
+
                         var numberOfRecordsToProceed = recordToMigrateList.Count;
                         var recordInstanced = 0;
                         var recordUpdated = 0;
@@ -436,6 +431,12 @@ namespace Carfup.XTBPlugins.BPFManager
                         // Instancing the BPF first
                         foreach (var record in recordToMigrateList)
                         {
+                            if (bw.CancellationPending)
+                            {
+                                e.Cancel = true;
+                                break;
+                            }
+
                             // Create the instance of the BPF on the record
                             SetProcessRequest setProcReq = new SetProcessRequest
                             {
@@ -471,6 +472,12 @@ namespace Carfup.XTBPlugins.BPFManager
                         //Updating the BPF stage + traversedpath 
                         foreach (var record in recordToMigrateList)
                         {
+                            if (bw.CancellationPending)
+                            {
+                                e.Cancel = true;
+                                break;
+                            }
+
                             var attrForCondition = bpfSelectedEntityTarget.Contains("_") ? $"bpf_{record.LogicalName}id" : $"{record.LogicalName}id";
 
                             // So we do it only once
@@ -571,12 +578,26 @@ namespace Carfup.XTBPlugins.BPFManager
                           this.log.LogData(EventType.Exception, LogAction.RecordsMigrated, e.Error);
                         return;
                     }
+                    else if (e.Cancelled)
+                    {
+                        this.log.LogData(EventType.Event, LogAction.MigrationCancelled);
+                        MessageBox.Show(
+                                $"The migration was successfully cancelled. {Environment.NewLine}{totalRecordMigrated} records were migrated.",
+                                "Cancel", MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
-                    MessageBox.Show($"You migrated {totalRecordMigrated} records !");
-                    SendMessageToStatusBar(this, new StatusBarMessageEventArgs("done!."));
-                    this.log.LogData(EventType.Event, LogAction.RecordsMigrated);
+                        labelNumberOfRecordsToMigrate.Text = "The migration will handle : X records.";
+                        labelRecordsRemaining.Text = "X";
+                        labelTimeEstimation.Text = "This can take up to X time.";
+                    }
+                    else
+                    {
 
-                    pictureBoxPatience.Visible = false;
+                        MessageBox.Show($"You migrated {totalRecordMigrated} records !");
+                        SendMessageToStatusBar(this, new StatusBarMessageEventArgs("done!."));
+                        this.log.LogData(EventType.Event, LogAction.RecordsMigrated);
+                    }
+
+                    manageEnablingOfControls(true);
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
             });
@@ -779,6 +800,21 @@ namespace Carfup.XTBPlugins.BPFManager
             }
         }
 
-        
+        private void manageEnablingOfControls(bool enabled)
+        {
+            btnRetrieveRecordsFetchQuery.Enabled = enabled;
+            btnMigrateRecordBPF.Enabled = enabled;
+            btnLoadBPFs.Enabled = enabled;
+            comboBoxChooseView.Enabled = enabled;
+            comboBoxChooseEntity.Enabled = enabled;
+            tsbCancel.Visible = !enabled;
+            tssCancel.Visible = !enabled;
+            pictureBoxPatience.Visible = !enabled;
+        }
+
+        private void tsbCancel_Click(object sender, EventArgs e)
+        {
+            CancelWorker();
+        }
     }
 }

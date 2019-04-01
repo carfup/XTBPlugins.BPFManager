@@ -29,9 +29,7 @@
         private void InitializeComponent()
         {
             this.toolStripMenu = new System.Windows.Forms.ToolStrip();
-            this.tsbClose = new System.Windows.Forms.ToolStripButton();
             this.tssSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-            this.toolStripButtonOptions = new System.Windows.Forms.ToolStripButton();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.gbPreparation = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
@@ -39,9 +37,10 @@
             this.groupBoxDetails = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel4 = new System.Windows.Forms.TableLayoutPanel();
             this.labelRemainingLabel = new System.Windows.Forms.Label();
-            this.labelRecordsRemaining = new System.Windows.Forms.Label();
             this.labelTimeEstimation = new System.Windows.Forms.Label();
+            this.labelRecordsRemaining = new System.Windows.Forms.Label();
             this.labelNumberOfRecordsToMigrate = new System.Windows.Forms.Label();
+            this.labelHasPermissions = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnRetrieveRecordsFetchQuery = new System.Windows.Forms.Button();
             this.tbRecordsRetrieved = new System.Windows.Forms.TextBox();
@@ -55,7 +54,6 @@
             this.radioButtonQueryView = new System.Windows.Forms.RadioButton();
             this.btnOpenFXB = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.pictureBoxPatience = new System.Windows.Forms.PictureBox();
             this.gpMigration = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -67,7 +65,11 @@
             this.btnMigrateRecordBPF = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.comboBox5 = new System.Windows.Forms.ComboBox();
-            this.labelHasPermissions = new System.Windows.Forms.Label();
+            this.pictureBoxPatience = new System.Windows.Forms.PictureBox();
+            this.tsbClose = new System.Windows.Forms.ToolStripButton();
+            this.toolStripButtonOptions = new System.Windows.Forms.ToolStripButton();
+            this.tsbCancel = new System.Windows.Forms.ToolStripButton();
+            this.tssCancel = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripMenu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.gbPreparation.SuspendLayout();
@@ -78,10 +80,10 @@
             this.panel1.SuspendLayout();
             this.panelBuildQuery.SuspendLayout();
             this.panel3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).BeginInit();
             this.gpMigration.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.panel2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).BeginInit();
             this.SuspendLayout();
             // 
             // toolStripMenu
@@ -90,7 +92,9 @@
             this.toolStripMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsbClose,
             this.tssSeparator1,
-            this.toolStripButtonOptions});
+            this.toolStripButtonOptions,
+            this.tssCancel,
+            this.tsbCancel});
             this.toolStripMenu.Location = new System.Drawing.Point(0, 0);
             this.toolStripMenu.Name = "toolStripMenu";
             this.toolStripMenu.Padding = new System.Windows.Forms.Padding(0, 0, 2, 0);
@@ -98,27 +102,10 @@
             this.toolStripMenu.TabIndex = 4;
             this.toolStripMenu.Text = "toolStrip1";
             // 
-            // tsbClose
-            // 
-            this.tsbClose.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.close;
-            this.tsbClose.Name = "tsbClose";
-            this.tsbClose.Size = new System.Drawing.Size(91, 34);
-            this.tsbClose.Text = "Close";
-            this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
-            // 
             // tssSeparator1
             // 
             this.tssSeparator1.Name = "tssSeparator1";
             this.tssSeparator1.Size = new System.Drawing.Size(6, 37);
-            // 
-            // toolStripButtonOptions
-            // 
-            this.toolStripButtonOptions.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.gear;
-            this.toolStripButtonOptions.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButtonOptions.Name = "toolStripButtonOptions";
-            this.toolStripButtonOptions.Size = new System.Drawing.Size(114, 34);
-            this.toolStripButtonOptions.Text = "Options";
-            this.toolStripButtonOptions.Click += new System.EventHandler(this.toolStripButtonOptions_Click);
             // 
             // tableLayoutPanel1
             // 
@@ -255,6 +242,18 @@
             this.labelRemainingLabel.Text = "Records remaing :";
             this.labelRemainingLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // labelTimeEstimation
+            // 
+            this.labelTimeEstimation.AutoSize = true;
+            this.labelTimeEstimation.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.labelTimeEstimation.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelTimeEstimation.Location = new System.Drawing.Point(3, 243);
+            this.labelTimeEstimation.Name = "labelTimeEstimation";
+            this.labelTimeEstimation.Size = new System.Drawing.Size(530, 29);
+            this.labelTimeEstimation.TabIndex = 2;
+            this.labelTimeEstimation.Text = "This can take up to X time.";
+            this.labelTimeEstimation.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // labelRecordsRemaining
             // 
             this.labelRecordsRemaining.AutoSize = true;
@@ -268,18 +267,6 @@
             this.labelRecordsRemaining.Text = "0";
             this.labelRecordsRemaining.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // labelTimeEstimation
-            // 
-            this.labelTimeEstimation.AutoSize = true;
-            this.labelTimeEstimation.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.labelTimeEstimation.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelTimeEstimation.Location = new System.Drawing.Point(3, 243);
-            this.labelTimeEstimation.Name = "labelTimeEstimation";
-            this.labelTimeEstimation.Size = new System.Drawing.Size(530, 29);
-            this.labelTimeEstimation.TabIndex = 2;
-            this.labelTimeEstimation.Text = "This can take up to X time.";
-            this.labelTimeEstimation.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // labelNumberOfRecordsToMigrate
             // 
             this.labelNumberOfRecordsToMigrate.AutoSize = true;
@@ -291,6 +278,18 @@
             this.labelNumberOfRecordsToMigrate.TabIndex = 1;
             this.labelNumberOfRecordsToMigrate.Text = "The migration will handle : X records.";
             this.labelNumberOfRecordsToMigrate.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // labelHasPermissions
+            // 
+            this.labelHasPermissions.AutoSize = true;
+            this.labelHasPermissions.Dock = System.Windows.Forms.DockStyle.Top;
+            this.labelHasPermissions.Location = new System.Drawing.Point(3, 0);
+            this.labelHasPermissions.Name = "labelHasPermissions";
+            this.labelHasPermissions.Size = new System.Drawing.Size(530, 50);
+            this.labelHasPermissions.TabIndex = 4;
+            this.labelHasPermissions.Text = "Please make sure that all your active users \r\nhave the proper permissions on the " +
+    "Target BPF";
+            this.labelHasPermissions.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panel1
             // 
@@ -445,20 +444,6 @@
             this.panel3.Size = new System.Drawing.Size(555, 397);
             this.panel3.TabIndex = 32;
             // 
-            // pictureBoxPatience
-            // 
-            this.pictureBoxPatience.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBoxPatience.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.patience;
-            this.pictureBoxPatience.Location = new System.Drawing.Point(5, 6);
-            this.pictureBoxPatience.Name = "pictureBoxPatience";
-            this.pictureBoxPatience.Size = new System.Drawing.Size(542, 391);
-            this.pictureBoxPatience.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBoxPatience.TabIndex = 0;
-            this.pictureBoxPatience.TabStop = false;
-            this.pictureBoxPatience.Visible = false;
-            // 
             // gpMigration
             // 
             this.gpMigration.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -592,17 +577,52 @@
             this.comboBox5.Size = new System.Drawing.Size(238, 32);
             this.comboBox5.TabIndex = 19;
             // 
-            // labelHasPermissions
+            // pictureBoxPatience
             // 
-            this.labelHasPermissions.AutoSize = true;
-            this.labelHasPermissions.Dock = System.Windows.Forms.DockStyle.Top;
-            this.labelHasPermissions.Location = new System.Drawing.Point(3, 0);
-            this.labelHasPermissions.Name = "labelHasPermissions";
-            this.labelHasPermissions.Size = new System.Drawing.Size(530, 50);
-            this.labelHasPermissions.TabIndex = 4;
-            this.labelHasPermissions.Text = "Please make sure that all your active users \r\nhave the proper permissions on the " +
-    "Target BPF";
-            this.labelHasPermissions.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.pictureBoxPatience.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.pictureBoxPatience.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.patience;
+            this.pictureBoxPatience.Location = new System.Drawing.Point(5, 6);
+            this.pictureBoxPatience.Name = "pictureBoxPatience";
+            this.pictureBoxPatience.Size = new System.Drawing.Size(542, 391);
+            this.pictureBoxPatience.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBoxPatience.TabIndex = 0;
+            this.pictureBoxPatience.TabStop = false;
+            this.pictureBoxPatience.Visible = false;
+            // 
+            // tsbClose
+            // 
+            this.tsbClose.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.close;
+            this.tsbClose.Name = "tsbClose";
+            this.tsbClose.Size = new System.Drawing.Size(91, 34);
+            this.tsbClose.Text = "Close";
+            this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
+            // 
+            // toolStripButtonOptions
+            // 
+            this.toolStripButtonOptions.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.gear;
+            this.toolStripButtonOptions.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonOptions.Name = "toolStripButtonOptions";
+            this.toolStripButtonOptions.Size = new System.Drawing.Size(114, 34);
+            this.toolStripButtonOptions.Text = "Options";
+            this.toolStripButtonOptions.Click += new System.EventHandler(this.toolStripButtonOptions_Click);
+            // 
+            // tsbCancel
+            // 
+            this.tsbCancel.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.cancel;
+            this.tsbCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbCancel.Name = "tsbCancel";
+            this.tsbCancel.Size = new System.Drawing.Size(103, 34);
+            this.tsbCancel.Text = "Cancel";
+            this.tsbCancel.Visible = false;
+            this.tsbCancel.Click += new System.EventHandler(this.tsbCancel_Click);
+            // 
+            // tssCancel
+            // 
+            this.tssCancel.Name = "tssCancel";
+            this.tssCancel.Size = new System.Drawing.Size(6, 37);
+            this.tssCancel.Visible = false;
             // 
             // BPFManager
             // 
@@ -630,11 +650,11 @@
             this.panelBuildQuery.ResumeLayout(false);
             this.panelBuildQuery.PerformLayout();
             this.panel3.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).EndInit();
             this.gpMigration.ResumeLayout(false);
             this.tableLayoutPanel3.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -681,5 +701,7 @@
         private System.Windows.Forms.Label labelTimeEstimation;
         private System.Windows.Forms.Label labelNumberOfRecordsToMigrate;
         private System.Windows.Forms.Label labelHasPermissions;
+        private System.Windows.Forms.ToolStripButton tsbCancel;
+        private System.Windows.Forms.ToolStripSeparator tssCancel;
     }
 }

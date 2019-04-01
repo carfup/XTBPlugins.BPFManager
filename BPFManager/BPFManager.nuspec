@@ -1,0 +1,28 @@
+﻿<package>
+  <metadata>
+    <id>Carfup.XTBPlugins.BPFManager</id>
+    <version>1.2019.4.1</version>
+    <title>BPF Manager</title>
+    <authors>Clement O.</authors>
+    <owners>Clement O.</owners>
+    <projectUrl>https://github.com/carfup/XTBPlugins.BPFManager</projectUrl>
+	 <iconUrl>http://www.gravatar.com/avatar/8b87aef303e872503c47ef3fdf83c801?s=64</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This plugin will allow you to migrate multiple record to a new Business Process Flow and select the stage you want !</description>
+    <summary>This plugin will allow you to migrate multiple record to a new Business Process Flow and select the stage you want !</summary>
+    <releaseNotes>
+1.2019.4.1
+  Ability to query your data based on a CRM view or FetchXmlBuilder plugin.
+  Migrate the records based on result above to the selected BPF / BPF Stage.
+  Option to reduce the number of record processed in a round.
+	</releaseNotes>
+    <copyright>Copyright 2019</copyright>
+    <tags>XrmToolBox Plugin BPFManager</tags>
+    <dependencies>
+      <dependency id="XrmToolBox" version="1.2018.1.20" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\Merged\Carfup.XTBPlugins.*.dll" target="lib\net462\Plugins" />
+  </files>
+</package>
