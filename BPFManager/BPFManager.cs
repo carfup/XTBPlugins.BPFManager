@@ -37,6 +37,7 @@ namespace Carfup.XTBPlugins.BPFManager
         public LogUsage log = null;
         private int totalRecordToMigrate = 0;
         private int timePerThousandMigration = 60;
+        private bool continueOnPermissionError = false;
 
         public string RepositoryName => "XTBPlugins.BPFManager";
         public string UserName => "carfup";
@@ -497,13 +498,19 @@ namespace Carfup.XTBPlugins.BPFManager
                                 }
                                 catch (Exception exception)
                                 {
-                                    var result = MessageBox.Show(exception.Message, "Error during migration !",
-                                        MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                                    if (!continueOnPermissionError)
+                                    {
+                                        var result = MessageBox.Show(exception.Message, "Error during migration !",
+                                            MessageBoxButtons.YesNo, MessageBoxIcon.Error);
 
-                                    if (result == DialogResult.No)
-                                        return;
-                                    else if (result == DialogResult.Yes)
-                                        continue;
+                                        if (result == DialogResult.No)
+                                            return;
+                                        else if (result == DialogResult.Yes)
+                                        {
+                                            continueOnPermissionError = true;
+                                            continue;
+                                        }
+                                    }
                                 }
                             }
 
