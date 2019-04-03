@@ -5,4 +5,4 @@
 This tool allows you to set an active business process flow stage for records in bulk. Use this after a data import, or simply to switch stages from an old BPF into a new one.
 
 #### How to use the plugin : 
-![](https://github.com/carfup/XTBPlugins.BPFManager/blob/quickFixes/BPFManager/Resources/help.png?raw=true)
+![](https://raw.githubusercontent.com/carfup/XTBPlugins.BPFManager/release/BPFManager/Resources/help.png)
