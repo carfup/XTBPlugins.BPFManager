@@ -707,6 +707,8 @@ namespace Carfup.XTBPlugins.BPFManager
             comboBoxChooseView.Items.Clear();
             comboBoxChooseView.SelectedIndex = -1;
             comboBoxChooseView.SelectedItem = null;
+            cbTargetBPFStages.Enabled = false;
+            cbTargetBPFList.Enabled = false;
 
             WorkAsync(new WorkAsyncInfo
             {
