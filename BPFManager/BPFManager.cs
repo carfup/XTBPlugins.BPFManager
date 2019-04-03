@@ -216,13 +216,18 @@ namespace Carfup.XTBPlugins.BPFManager
 
 
                     totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
-                    int time = (totalRecordToMigrate / 1000) * timePerThousandMigration;
-                    labelNumberOfRecordsToMigrate.Text = $"The migration will handle : {totalRecordToMigrate} records.";
-                    labelTimeEstimation.Text = $"This can take up to {((time < 60) ? "60" : time.ToString())} seconds.";
-                    labelRecordsRemaining.Text = $"{totalRecordToMigrate}";
+                    DisplayStatsMiddle();
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
             });
+        }
+
+        private void DisplayStatsMiddle()
+        {
+            int time = (totalRecordToMigrate / 1000) * timePerThousandMigration;
+            labelNumberOfRecordsToMigrate.Text = $"The migration will handle : {totalRecordToMigrate} records.";
+            labelTimeEstimation.Text = $"This can take up to {((time < 60) ? "60" : time.ToString())} seconds.";
+            labelRecordsRemaining.Text = $"{totalRecordToMigrate}";
         }
 
         private void btnRetrieveUsers_Click(object sender, EventArgs evt)
@@ -389,14 +394,16 @@ namespace Carfup.XTBPlugins.BPFManager
             var totalRecordMigrated = 0;
             var totalRecordInstanced = 0;
             var totalRecordUpdated = 0;
+            var totalSkipped = 0;
             totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
 
             manageEnablingOfControls(false);
+            DisplayStatsMiddle();
 
             // Init progressBar
 
-            SendMessageToStatusBar(this, new StatusBarMessageEventArgs(0, "Migrating ..."));
+            SendMessageToStatusBar(this, new StatusBarMessageEventArgs(0, "Starting migration ..."));
 
             WorkAsync(new WorkAsyncInfo
             {
@@ -495,6 +502,8 @@ namespace Carfup.XTBPlugins.BPFManager
 
                                     if (result == DialogResult.No)
                                         return;
+                                    else if (result == DialogResult.Yes)
+                                        continue;
                                 }
                             }
 
@@ -594,7 +603,7 @@ namespace Carfup.XTBPlugins.BPFManager
                     else
                     {
 
-                        MessageBox.Show($"You migrated {totalRecordMigrated} records !");
+                        MessageBox.Show($"You migrated {totalRecordMigrated} records !", "Migration done.", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         SendMessageToStatusBar(this, new StatusBarMessageEventArgs("done!."));
                         this.log.LogData(EventType.Event, LogAction.RecordsMigrated);
                     }
@@ -811,6 +820,8 @@ namespace Carfup.XTBPlugins.BPFManager
             btnLoadBPFs.Enabled = enabled;
             comboBoxChooseView.Enabled = enabled;
             comboBoxChooseEntity.Enabled = enabled;
+            cbTargetBPFList.Enabled = enabled;
+            cbTargetBPFStages.Enabled = enabled;
             tsbCancel.Visible = !enabled;
             tssCancel.Visible = !enabled;
             pictureBoxPatience.Visible = !enabled;
