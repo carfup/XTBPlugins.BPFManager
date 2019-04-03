@@ -588,6 +588,8 @@ namespace Carfup.XTBPlugins.BPFManager
                         labelNumberOfRecordsToMigrate.Text = "The migration will handle : X records.";
                         labelRecordsRemaining.Text = "X";
                         labelTimeEstimation.Text = "This can take up to X time.";
+
+                        SendMessageToStatusBar(this, new StatusBarMessageEventArgs(0, "Cancelled ..."));
                     }
                     else
                     {
@@ -684,6 +686,8 @@ namespace Carfup.XTBPlugins.BPFManager
             entityViews = new List<Entity>();
             comboBoxChooseView.Items.Clear();
             comboBoxChooseView.SelectedIndex = -1;
+            comboBoxChooseView.SelectedItem = null;
+
             WorkAsync(new WorkAsyncInfo
             {
                 Message = "Looking for entity views...",

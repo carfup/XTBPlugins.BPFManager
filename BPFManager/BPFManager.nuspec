@@ -8,8 +8,8 @@
     <projectUrl>https://github.com/carfup/XTBPlugins.BPFManager</projectUrl>
 	 <iconUrl>http://www.gravatar.com/avatar/8b87aef303e872503c47ef3fdf83c801?s=64</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>This plugin will allow you to migrate multiple record to a new Business Process Flow and select the stage you want !</description>
-    <summary>This plugin will allow you to migrate multiple record to a new Business Process Flow and select the stage you want !</summary>
+    <description>This tool allows you to set an active business process flow stage for records in bulk. Use this after a data import, or simply to switch stages from an old BPF into a new one.</description>
+    <summary>Use this tool to set the Active BPF stage for records in Bulk.</summary>
     <releaseNotes>
 1.2019.4.1
   Ability to query your data based on a CRM view or FetchXmlBuilder plugin.
@@ -19,7 +19,7 @@
     <copyright>Copyright 2019</copyright>
     <tags>XrmToolBox Plugin BPFManager</tags>
     <dependencies>
-      <dependency id="XrmToolBox" version="1.2018.1.20" />
+      <dependency id="XrmToolBox" version="1.2019.2.30" />
     </dependencies>
   </metadata>
   <files>
