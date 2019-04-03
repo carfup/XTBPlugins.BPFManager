@@ -511,6 +511,10 @@ namespace Carfup.XTBPlugins.BPFManager
                                             continue;
                                         }
                                     }
+                                    else
+                                    {
+                                        continue;
+                                    }
                                 }
                             }
 
