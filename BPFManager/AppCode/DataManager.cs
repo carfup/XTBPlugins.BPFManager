@@ -223,7 +223,25 @@ namespace Carfup.XTBPlugins.AppCode
             return result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key).ToArray();
         }
 
-        public List<Entity> GetViewsOfEntity(string entity)
+        public List<Entity> GetSystemViewsOfEntity(string entity)
+        {
+            var querySystemViews = this.service.RetrieveMultiple(new QueryExpression()
+            {
+                EntityName = "savedquery",
+                ColumnSet = new ColumnSet("name", "fetchxml"),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("returnedtypecode", ConditionOperator.Equal, entity)
+                    }
+                }
+            });
+
+            return querySystemViews.Entities.ToList();
+        }
+
+        public List<Entity> GetPersonalViewsOfEntity(string entity)
         {
             var queryUserViews = this.service.RetrieveMultiple(new QueryExpression()
             {
@@ -238,22 +256,7 @@ namespace Carfup.XTBPlugins.AppCode
                 }
             });
 
-            var querySystemViews = this.service.RetrieveMultiple(new QueryExpression()
-            {
-                EntityName = "savedquery",
-                ColumnSet = new ColumnSet("name", "fetchxml"),
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("returnedtypecode", ConditionOperator.Equal, entity)
-                    }
-                }
-            });
-
-            var allViews = querySystemViews.Entities.Union(queryUserViews.Entities);
-
-            return allViews.ToList();
+            return queryUserViews.Entities.ToList();
         }
 
         private QueryExpression ConvertFetchXMLtoQueryExpression(string fetchXmlQuery)

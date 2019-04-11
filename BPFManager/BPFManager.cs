@@ -709,6 +709,8 @@ namespace Carfup.XTBPlugins.BPFManager
             comboBoxChooseView.SelectedItem = null;
             cbTargetBPFStages.Enabled = false;
             cbTargetBPFList.Enabled = false;
+            List<Entity> personalViews = new List<Entity>();
+            List<Entity> systemViews = new List<Entity>();
 
             WorkAsync(new WorkAsyncInfo
             {
@@ -717,7 +719,8 @@ namespace Carfup.XTBPlugins.BPFManager
                 {
                     Invoke(new Action(() =>
                     {
-                        e.Result = dm.GetViewsOfEntity(comboBoxChooseEntity.SelectedItem.ToString());
+                        personalViews = dm.GetPersonalViewsOfEntity(comboBoxChooseEntity.SelectedItem.ToString());
+                        systemViews = dm.GetSystemViewsOfEntity(comboBoxChooseEntity.SelectedItem.ToString());
                     }));
                 },
                 PostWorkCallBack = e =>
@@ -729,16 +732,17 @@ namespace Carfup.XTBPlugins.BPFManager
                         return;
                     }
 
-                    var result = e.Result as List<Entity>;
-
-                    if (result.Count == 0)
+                    if (personalViews.Count == 0 || systemViews.Count == 0)
                     {
                         MessageBox.Show("Your query has no result");
                         return;
                     }
 
-                    entityViews.AddRange(result);
-                    comboBoxChooseView.Items.AddRange(result.Select(x => x.Attributes["name"]).ToArray());
+                    entityViews.AddRange(systemViews.Union(personalViews));
+                    comboBoxChooseView.Items.Add("####### System Views #######");
+                    comboBoxChooseView.Items.AddRange(systemViews.Select(x => x.Attributes["name"]).OrderBy(x => x).ToArray());
+                    comboBoxChooseView.Items.Add("####### Personal Views #######");
+                    comboBoxChooseView.Items.AddRange(personalViews.Select(x => x.Attributes["name"]).OrderBy(x => x).ToArray());
                     this.log.LogData(EventType.Event, LogAction.BPFEntityViewsRetrieved);
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
@@ -784,8 +788,14 @@ namespace Carfup.XTBPlugins.BPFManager
 
         private void comboBoxChooseView_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (comboBoxChooseView.SelectedIndex == -1)
+            if (comboBoxChooseView.SelectedIndex == -1 ||
+                comboBoxChooseView.SelectedItem.ToString().Contains("Personal Views") ||
+                comboBoxChooseView.SelectedItem.ToString().Contains("System Views"))
+            {
+                fetchxmlQuery = null;
+                btnRetrieveRecordsFetchQuery.Enabled = false;
                 return;
+            }
 
             var selectedView = entityViews.FirstOrDefault(x => x.Attributes["name"] == comboBoxChooseView.SelectedItem);
             fetchxmlQuery = selectedView.GetAttributeValue<string>("fetchxml");
