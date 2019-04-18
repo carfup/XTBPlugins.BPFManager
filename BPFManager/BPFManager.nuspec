@@ -1,16 +1,21 @@
 ﻿<package>
   <metadata>
     <id>Carfup.XTBPlugins.BPFManager</id>
-    <version>1.2019.4.1</version>
+    <version>1.2019.4.3</version>
     <title>BPF Manager</title>
-    <authors>Clement O.</authors>
-    <owners>Clement O.</owners>
+    <authors>Clement Olivier and Gus Gonzalez</authors>
+    <owners>Clement Olivier and Gus Gonzalez</owners>
     <projectUrl>https://github.com/carfup/XTBPlugins.BPFManager</projectUrl>
 	 <iconUrl>http://www.gravatar.com/avatar/8b87aef303e872503c47ef3fdf83c801?s=64</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>This tool allows you to set an active business process flow stage for records in bulk. Use this after a data import, or simply to switch stages from an old BPF into a new one.</description>
     <summary>Use this tool to set the Active BPF stage for records in Bulk.</summary>
     <releaseNotes>
+1.2019.4.3
+  Views are now split by system and personal types
+  Entities are displayed with the Schema Name + Display name
+  Various improvements in the background
+  
 1.2019.4.1
   Ability to query your data based on a CRM view or FetchXmlBuilder plugin.
   Migrate the records based on result above to the selected BPF / BPF Stage.
