@@ -7,7 +7,7 @@ namespace Carfup.XTBPlugins.AppCode
     {
         public bool? AllowLogUsage { get; set; }
         public string CurrentVersion { get; set; } = BPFManager.BPFManager.CurrentVersion;
-        public int NumberOfRecordPerRound { get; set; } = 5000;
+        public int NumberOfRecordPerRound { get; set; } = 1000;
     }
 
     // EventType to qualify which type of telemetry we send
@@ -42,6 +42,8 @@ namespace Carfup.XTBPlugins.AppCode
         public const string EntitiesWithBPFRetrieved = "EntitiesWithBPFRetrieved";
         public const string BPFEntityViewsRetrieved = "BPFEntityViewsRetrieved";
         public const string MigrationCancelled = "MigrationCancelled";
+        public const string NoBPFForEntity = "NoBPFForEntity";
+        public const string NoStagesForBPF = "NoStagesForBPF";
     }
 
 
