@@ -162,8 +162,20 @@ namespace Carfup.XTBPlugins.BPFManager
             OnOutgoingMessage(this, messageBusEventArgs);
         }
 
+        private bool isFetchQueryValidated()
+        {
+            return fetchxmlQuery.ToLower().StartsWith("<fetch");
+        }
+
         private void btnRetrieveRecordsFetchQuery_Click(object sender, EventArgs evt)
         {
+            if (!isFetchQueryValidated())
+            {
+                MessageBox.Show("Error with your query",
+                    "It seems that you are trying to execute a wrong FetchXML query", MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+                return;
+            }
 
             if (!IsConnectedToEnvironment())
                 return;
@@ -285,7 +297,8 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     if (bpfList.Count == 0)
                     {
-                        MessageBox.Show("Your query has no result");
+                        this.log.LogData(EventType.Event, LogAction.NoBPFForEntity);
+                        MessageBox.Show("This entity has no BPF(s) associated yet...");
                         return;
                     }
 
@@ -326,7 +339,8 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     if (stageList.Count == 0)
                     {
-                        MessageBox.Show("Your query has no result");
+                        this.log.LogData(EventType.Event, LogAction.NoStagesForBPF);
+                        MessageBox.Show("There are no stages associated to this BPF...");
                         return;
                     }
 
@@ -778,7 +792,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     if (result.Count == 0)
                     {
-                        MessageBox.Show("Your query has no result");
+                        MessageBox.Show("There are no entities with BPF(s) associated yet...");
                         return;
                     }
 

@@ -65,7 +65,7 @@
             0});
             this.numericUpDownNumberOfRecordsPerRound.Location = new System.Drawing.Point(293, 44);
             this.numericUpDownNumberOfRecordsPerRound.Maximum = new decimal(new int[] {
-            5000,
+            1000,
             0,
             0,
             0});
