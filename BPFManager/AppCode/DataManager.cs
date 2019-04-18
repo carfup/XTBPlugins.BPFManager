@@ -17,6 +17,7 @@ namespace Carfup.XTBPlugins.AppCode
     {
         public IOrganizationService service { get; set; } = null;
         public int recordToRetrieveEachRound = 5000;
+        public EntityMetadata[] entitiesMetadata = null;
 
         public DataManager(IOrganizationService service)
         {
@@ -175,7 +176,7 @@ namespace Carfup.XTBPlugins.AppCode
             return this.service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet(true),
+                ColumnSet = new ColumnSet("name"),
                 Criteria =
                 {
                     Conditions =
@@ -203,8 +204,11 @@ namespace Carfup.XTBPlugins.AppCode
             }).Entities.ToList();
         }
 
-        public string[] GetEntitiesWithBPF()
+        public List<EntityDetailledName> GetEntitiesWithBPF()
         {
+            if (entitiesMetadata == null)
+                retrieveMetadataEntity();
+
             var query = new QueryExpression()
             {
                 EntityName = "workflow",
@@ -220,10 +224,39 @@ namespace Carfup.XTBPlugins.AppCode
 
             var result = this.service.RetrieveMultiple(query).Entities;
 
-            return result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key).ToArray();
+            List<EntityDetailledName> edn = new List<EntityDetailledName>();
+            foreach (var r in result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key))
+            {
+                edn.Add(new EntityDetailledName()
+                {
+                    logicalName = r,
+                    schemaName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r)?.SchemaName,
+                    displayName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r)?.DisplayName.UserLocalizedLabel.Label
+                });
+            }
+
+            return edn; //result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key).ToArray();
         }
 
-        public List<Entity> GetViewsOfEntity(string entity)
+        public List<Entity> GetSystemViewsOfEntity(string entity)
+        {
+            var querySystemViews = this.service.RetrieveMultiple(new QueryExpression()
+            {
+                EntityName = "savedquery",
+                ColumnSet = new ColumnSet("name", "fetchxml"),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("returnedtypecode", ConditionOperator.Equal, entity)
+                    }
+                }
+            });
+
+            return querySystemViews.Entities.ToList();
+        }
+
+        public List<Entity> GetPersonalViewsOfEntity(string entity)
         {
             var queryUserViews = this.service.RetrieveMultiple(new QueryExpression()
             {
@@ -238,22 +271,7 @@ namespace Carfup.XTBPlugins.AppCode
                 }
             });
 
-            var querySystemViews = this.service.RetrieveMultiple(new QueryExpression()
-            {
-                EntityName = "savedquery",
-                ColumnSet = new ColumnSet("name", "fetchxml"),
-                Criteria =
-                {
-                    Conditions =
-                    {
-                        new ConditionExpression("returnedtypecode", ConditionOperator.Equal, entity)
-                    }
-                }
-            });
-
-            var allViews = querySystemViews.Entities.Union(queryUserViews.Entities);
-
-            return allViews.ToList();
+            return queryUserViews.Entities.ToList();
         }
 
         private QueryExpression ConvertFetchXMLtoQueryExpression(string fetchXmlQuery)
@@ -282,5 +300,26 @@ namespace Carfup.XTBPlugins.AppCode
             var metadata = (RetrieveEntityResponse)service.Execute(request);
             return metadata.EntityMetadata.PrimaryNameAttribute;
         }
+
+        public void retrieveMetadataEntity()
+        {
+            RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest()
+            {
+                EntityFilters = EntityFilters.Entity,
+                RetrieveAsIfPublished = true
+            };
+
+            // Retrieve the MetaData.
+            RetrieveAllEntitiesResponse response = (RetrieveAllEntitiesResponse)this.service.Execute(request);
+
+            entitiesMetadata = response.EntityMetadata;
+        }
+    }
+
+    public class EntityDetailledName
+    {
+        public string logicalName { get; set; }
+        public string schemaName { get; set; }
+        public string displayName { get; set; }
     }
 }

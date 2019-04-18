@@ -29,7 +29,11 @@
         private void InitializeComponent()
         {
             this.toolStripMenu = new System.Windows.Forms.ToolStrip();
+            this.tsbClose = new System.Windows.Forms.ToolStripButton();
             this.tssSeparator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripButtonOptions = new System.Windows.Forms.ToolStripButton();
+            this.tssCancel = new System.Windows.Forms.ToolStripSeparator();
+            this.tsbCancel = new System.Windows.Forms.ToolStripButton();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.gbPreparation = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
@@ -54,6 +58,7 @@
             this.radioButtonQueryView = new System.Windows.Forms.RadioButton();
             this.btnOpenFXB = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.pictureBoxPatience = new System.Windows.Forms.PictureBox();
             this.gpMigration = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel3 = new System.Windows.Forms.TableLayoutPanel();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -65,11 +70,6 @@
             this.btnMigrateRecordBPF = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.comboBox5 = new System.Windows.Forms.ComboBox();
-            this.pictureBoxPatience = new System.Windows.Forms.PictureBox();
-            this.tsbClose = new System.Windows.Forms.ToolStripButton();
-            this.toolStripButtonOptions = new System.Windows.Forms.ToolStripButton();
-            this.tsbCancel = new System.Windows.Forms.ToolStripButton();
-            this.tssCancel = new System.Windows.Forms.ToolStripSeparator();
             this.toolStripMenu.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.gbPreparation.SuspendLayout();
@@ -80,10 +80,10 @@
             this.panel1.SuspendLayout();
             this.panelBuildQuery.SuspendLayout();
             this.panel3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).BeginInit();
             this.gpMigration.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.panel2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).BeginInit();
             this.SuspendLayout();
             // 
             // toolStripMenu
@@ -102,10 +102,43 @@
             this.toolStripMenu.TabIndex = 4;
             this.toolStripMenu.Text = "toolStrip1";
             // 
+            // tsbClose
+            // 
+            this.tsbClose.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.close;
+            this.tsbClose.Name = "tsbClose";
+            this.tsbClose.Size = new System.Drawing.Size(91, 34);
+            this.tsbClose.Text = "Close";
+            this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
+            // 
             // tssSeparator1
             // 
             this.tssSeparator1.Name = "tssSeparator1";
             this.tssSeparator1.Size = new System.Drawing.Size(6, 37);
+            // 
+            // toolStripButtonOptions
+            // 
+            this.toolStripButtonOptions.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.gear;
+            this.toolStripButtonOptions.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.toolStripButtonOptions.Name = "toolStripButtonOptions";
+            this.toolStripButtonOptions.Size = new System.Drawing.Size(114, 34);
+            this.toolStripButtonOptions.Text = "Options";
+            this.toolStripButtonOptions.Click += new System.EventHandler(this.toolStripButtonOptions_Click);
+            // 
+            // tssCancel
+            // 
+            this.tssCancel.Name = "tssCancel";
+            this.tssCancel.Size = new System.Drawing.Size(6, 37);
+            this.tssCancel.Visible = false;
+            // 
+            // tsbCancel
+            // 
+            this.tsbCancel.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.cancel;
+            this.tsbCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbCancel.Name = "tsbCancel";
+            this.tsbCancel.Size = new System.Drawing.Size(103, 34);
+            this.tsbCancel.Text = "Cancel";
+            this.tsbCancel.Visible = false;
+            this.tsbCancel.Click += new System.EventHandler(this.tsbCancel_Click);
             // 
             // tableLayoutPanel1
             // 
@@ -371,7 +404,6 @@
             this.comboBoxChooseView.Location = new System.Drawing.Point(10, 257);
             this.comboBoxChooseView.Name = "comboBoxChooseView";
             this.comboBoxChooseView.Size = new System.Drawing.Size(542, 32);
-            this.comboBoxChooseView.Sorted = true;
             this.comboBoxChooseView.TabIndex = 30;
             this.comboBoxChooseView.Visible = false;
             this.comboBoxChooseView.SelectedIndexChanged += new System.EventHandler(this.comboBoxChooseView_SelectedIndexChanged);
@@ -443,6 +475,20 @@
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(555, 397);
             this.panel3.TabIndex = 32;
+            // 
+            // pictureBoxPatience
+            // 
+            this.pictureBoxPatience.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.pictureBoxPatience.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.patience;
+            this.pictureBoxPatience.Location = new System.Drawing.Point(5, 6);
+            this.pictureBoxPatience.Name = "pictureBoxPatience";
+            this.pictureBoxPatience.Size = new System.Drawing.Size(542, 391);
+            this.pictureBoxPatience.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBoxPatience.TabIndex = 0;
+            this.pictureBoxPatience.TabStop = false;
+            this.pictureBoxPatience.Visible = false;
             // 
             // gpMigration
             // 
@@ -577,53 +623,6 @@
             this.comboBox5.Size = new System.Drawing.Size(238, 32);
             this.comboBox5.TabIndex = 19;
             // 
-            // pictureBoxPatience
-            // 
-            this.pictureBoxPatience.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pictureBoxPatience.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.patience;
-            this.pictureBoxPatience.Location = new System.Drawing.Point(5, 6);
-            this.pictureBoxPatience.Name = "pictureBoxPatience";
-            this.pictureBoxPatience.Size = new System.Drawing.Size(542, 391);
-            this.pictureBoxPatience.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBoxPatience.TabIndex = 0;
-            this.pictureBoxPatience.TabStop = false;
-            this.pictureBoxPatience.Visible = false;
-            // 
-            // tsbClose
-            // 
-            this.tsbClose.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.close;
-            this.tsbClose.Name = "tsbClose";
-            this.tsbClose.Size = new System.Drawing.Size(91, 34);
-            this.tsbClose.Text = "Close";
-            this.tsbClose.Click += new System.EventHandler(this.tsbClose_Click);
-            // 
-            // toolStripButtonOptions
-            // 
-            this.toolStripButtonOptions.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.gear;
-            this.toolStripButtonOptions.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.toolStripButtonOptions.Name = "toolStripButtonOptions";
-            this.toolStripButtonOptions.Size = new System.Drawing.Size(114, 34);
-            this.toolStripButtonOptions.Text = "Options";
-            this.toolStripButtonOptions.Click += new System.EventHandler(this.toolStripButtonOptions_Click);
-            // 
-            // tsbCancel
-            // 
-            this.tsbCancel.Image = global::Carfup.XTBPlugins.BPFManager.Properties.Resources.cancel;
-            this.tsbCancel.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.tsbCancel.Name = "tsbCancel";
-            this.tsbCancel.Size = new System.Drawing.Size(103, 34);
-            this.tsbCancel.Text = "Cancel";
-            this.tsbCancel.Visible = false;
-            this.tsbCancel.Click += new System.EventHandler(this.tsbCancel_Click);
-            // 
-            // tssCancel
-            // 
-            this.tssCancel.Name = "tssCancel";
-            this.tssCancel.Size = new System.Drawing.Size(6, 37);
-            this.tssCancel.Visible = false;
-            // 
             // BPFManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
@@ -650,11 +649,11 @@
             this.panelBuildQuery.ResumeLayout(false);
             this.panelBuildQuery.PerformLayout();
             this.panel3.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).EndInit();
             this.gpMigration.ResumeLayout(false);
             this.tableLayoutPanel3.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBoxPatience)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
