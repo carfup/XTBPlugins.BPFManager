@@ -203,7 +203,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     if (recordToMigrateList.Count == 0)
                     {
-                        MessageBox.Show("Your record query has no result");
+                        MessageBox.Show("Your entity query has no results.");
                         tbRecordsRetrieved.Text = "";
                         return;
                     }
@@ -750,9 +750,9 @@ namespace Carfup.XTBPlugins.BPFManager
                         return;
                     }
 
-                    if (personalViews.Count == 0 || systemViews.Count == 0)
+                    =if (personalViews.Count == 0 && systemViews.Count == 0)
                     {
-                        MessageBox.Show("Your query has no result");
+                        MessageBox.Show("This entity has no related views.");
                         return;
                     }
 
