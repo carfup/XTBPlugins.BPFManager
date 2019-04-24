@@ -750,7 +750,7 @@ namespace Carfup.XTBPlugins.BPFManager
                         return;
                     }
 
-                    =if (personalViews.Count == 0 && systemViews.Count == 0)
+                    if (personalViews.Count == 0 && systemViews.Count == 0)
                     {
                         MessageBox.Show("This entity has no related views.");
                         return;
