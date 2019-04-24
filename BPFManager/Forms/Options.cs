@@ -30,7 +30,7 @@ namespace Carfup.XTBPlugins.Forms
             }
 
             checkboxAllowStats.Checked = settings.AllowLogUsage != false;
-            numericUpDownNumberOfRecordsPerRound.Value = settings.NumberOfRecordPerRound;
+            numericUpDownNumberOfRecordsPerRound.Value = (settings.NumberOfRecordPerRound > 1000) ? 1000 : settings.NumberOfRecordPerRound;
         }
 
         internal PluginSettings GetSettings()

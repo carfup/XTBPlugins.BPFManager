@@ -176,7 +176,7 @@ namespace Carfup.XTBPlugins.AppCode
             return this.service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("name"),
+                ColumnSet = new ColumnSet("name","uniquename"),
                 Criteria =
                 {
                     Conditions =
