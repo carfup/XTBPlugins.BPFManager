@@ -56,7 +56,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
-            dm = new DataManager(newService);
+            dm = new DataManager(detail.ServiceClient);
             IsVersionSupported(detail);
 
             base.UpdateConnection(newService, detail, actionName, parameter);
@@ -426,6 +426,29 @@ namespace Carfup.XTBPlugins.BPFManager
                 IsCancelable = true,
                 Work = (bw, e) =>
                 {
+                    List<Entity> retrieveExistingBPFInstances = null;
+                    try
+                    {
+                        retrieveExistingBPFInstances = dm.GetExistingBPFInstances(bpfSelected.GetAttributeValue<string>("uniquename"),
+                            recordToMigrateList.FirstOrDefault().LogicalName, recordToMigrateList.Select(x => x.Id).ToArray());
+                    }
+                    catch (Exception exception)
+                    {
+                        if (!continueOnPermissionError)
+                        {
+                            var result = MessageBox.Show(exception.Message, "Error during migration !",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+
+                            if (result == DialogResult.No)
+                                return;
+                            else if (result == DialogResult.Yes)
+                            {
+                                continueOnPermissionError = true;
+                            }
+                        }
+                    }
+
+
                     var userProceed = 1;
                     int progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
                     foreach (var user in userList)
@@ -453,6 +476,7 @@ namespace Carfup.XTBPlugins.BPFManager
                         // Instancing the BPF first
                         foreach (var record in recordToMigrateList)
                         {
+                            
                             if (bw.CancellationPending)
                             {
                                 e.Cancel = true;
@@ -463,8 +487,16 @@ namespace Carfup.XTBPlugins.BPFManager
                             SetProcessRequest setProcReq = new SetProcessRequest
                             {
                                 Target = record.ToEntityReference(),
-                                NewProcess = new EntityReference(bpfSelected.LogicalName, bpfSelected.Id)
+                                NewProcess = new EntityReference(bpfSelected.LogicalName, bpfSelected.Id),
                             };
+
+                            var existingBPFInstance = retrieveExistingBPFInstances.FirstOrDefault(x => x.GetAttributeValue<EntityReference>("bpf_" + record.LogicalName + "id")?.Id == record.Id || x.GetAttributeValue<EntityReference>(record.LogicalName + "id")?.Id == record.Id);
+                            if (existingBPFInstance != null)
+                            {
+                                setProcReq.NewProcessInstance = new EntityReference("workflow", existingBPFInstance.Id);
+                                setProcReq.NewProcess = null;
+                            }
+
                             executeMultipleRequestSetBPF.Requests.Add(setProcReq);
 
                             recordInstanced++;
@@ -548,7 +580,7 @@ namespace Carfup.XTBPlugins.BPFManager
                                     ProcessInstanceId = wantedBPFInstanceREcord.Id
                                 };
                                 var activePathResponse =
-                                    (RetrieveActivePathResponse)this.Service.Execute(activePathRequest);
+                                    (RetrieveActivePathResponse)this.dm.service.Execute(activePathRequest);
 
                                 var stageDefinitions =
                                     ((EntityCollection)activePathResponse.Results.Values.FirstOrDefault())?.Entities;
@@ -646,13 +678,13 @@ namespace Carfup.XTBPlugins.BPFManager
             {
                 if (impersonate)
                 {
-                    var proxy = (OrganizationServiceProxy)this.Service;
-                    proxy.CallerId = userId;
-                    executeMultipleResponse = (ExecuteMultipleResponse)proxy.Execute(executeMultipleRequestSetBPF);
+                    //var proxy = (OrganizationServiceProxy)this.dm.service;
+                    this.dm.service.CallerId = userId;
+                    executeMultipleResponse = (ExecuteMultipleResponse)this.dm.service.Execute(executeMultipleRequestSetBPF);
                 }
                 else
                 {
-                    executeMultipleResponse = (ExecuteMultipleResponse)this.Service.Execute(executeMultipleRequestSetBPF);
+                    executeMultipleResponse = (ExecuteMultipleResponse)this.dm.service.Execute(executeMultipleRequestSetBPF);
                 }
             }
             catch (Exception e)
