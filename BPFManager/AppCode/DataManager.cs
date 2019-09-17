@@ -31,7 +31,7 @@ namespace Carfup.XTBPlugins.AppCode
             QueryExpression query = ConvertFetchXMLtoQueryExpression(fetchXmlQuery);
             query.NoLock = true;
 
-            if(query.TopCount == null)
+            if (query.TopCount == null)
             {
                 query.PageInfo = new PagingInfo
                 {
@@ -39,7 +39,6 @@ namespace Carfup.XTBPlugins.AppCode
                     PageNumber = 1
                 };
             }
-
 
             EntityCollection ec;
             int total = 0;
@@ -54,7 +53,6 @@ namespace Carfup.XTBPlugins.AppCode
                 }
 
                 worker?.ReportProgress(0, $"{total} records retrieved...");
-
 
                 recordToMigrate.AddRange(ec.Entities);
                 //foreach (var record in ec.Entities)
@@ -86,7 +84,7 @@ namespace Carfup.XTBPlugins.AppCode
                         new ConditionExpression("domainname", ConditionOperator.NotNull),
                         new ConditionExpression("domainname", ConditionOperator.NotEqual, ""),
                         new ConditionExpression("domainname", ConditionOperator.NotEqual, "bap_sa@microsoft.com"),
-                        new ConditionExpression("accessmode", ConditionOperator.NotIn, new string[] {"3", "5"}),
+                        new ConditionExpression("accessmode", ConditionOperator.NotIn, new string[] {"3", "5","1"}),
                     }
                 },
                 PageInfo =
@@ -96,7 +94,6 @@ namespace Carfup.XTBPlugins.AppCode
                 },
                 NoLock = true
             };
-
 
             EntityCollection ec;
             int total = 0;
@@ -110,7 +107,6 @@ namespace Carfup.XTBPlugins.AppCode
                 worker?.ReportProgress(0, $"{total} records retrieved...");
 
                 users.AddRange(ec.Entities);
-                
             } while (ec.MoreRecords /*&& Cancel == false*/);
 
             return users;
@@ -139,7 +135,6 @@ namespace Carfup.XTBPlugins.AppCode
                 },
                 NoLock = true
             };
-            
 
             EntityCollection ec;
             int total = 0;
@@ -156,7 +151,7 @@ namespace Carfup.XTBPlugins.AppCode
                 }
                 catch (FaultException<OrganizationServiceFault> ex)
                 {
-                    if(ex.Message.Contains("is missing prv"))
+                    if (ex.Message.Contains("is missing prv"))
                         throw new Exception($"One or more users are unable to access the Target BPF.{Environment.NewLine}Ensure permissions are set before proceeding.{Environment.NewLine}{Environment.NewLine}Would you like to proceed ?");
 
                     throw;
@@ -167,7 +162,6 @@ namespace Carfup.XTBPlugins.AppCode
                 query.PageInfo.PagingCookie = ec.PagingCookie;
 
                 resultQueryProperBPF.AddRange(ec.Entities);
-
             } while (ec.MoreRecords /*&& Cancel == false*/);
 
             return resultQueryProperBPF;
@@ -178,7 +172,7 @@ namespace Carfup.XTBPlugins.AppCode
             return this.service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("name","uniquename"),
+                ColumnSet = new ColumnSet("name", "uniquename"),
                 Criteria =
                 {
                     Conditions =
@@ -193,16 +187,16 @@ namespace Carfup.XTBPlugins.AppCode
         public List<Entity> GetExistingBPFInstances(string bpfEntityName, string relatedEntityName, Guid[] guidList)
         {
             var bpfMetadata = GetAttributeOfEntity(bpfEntityName);
-            
+
             var relatedEntityNameModified = $"{relatedEntityName}id";
 
-            if(bpfMetadata.Attributes.FirstOrDefault(x => x.LogicalName == relatedEntityNameModified) == null)
+            if (bpfMetadata.Attributes.FirstOrDefault(x => x.LogicalName == relatedEntityNameModified) == null)
                 relatedEntityNameModified = $"bpf_{relatedEntityName}id";
 
             if (bpfMetadata.Attributes.FirstOrDefault(x => x.LogicalName == relatedEntityNameModified) == null)
                 throw new Exception("We couldn't figure out what is the proper primary fieldname of the BPF entity.");
 
-                return this.service.RetrieveMultiple(new QueryExpression()
+            return this.service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = bpfEntityName,
                 ColumnSet = new ColumnSet("businessprocessflowinstanceid", relatedEntityNameModified),
