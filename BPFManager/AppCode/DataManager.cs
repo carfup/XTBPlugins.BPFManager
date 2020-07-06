@@ -184,6 +184,7 @@ namespace Carfup.XTBPlugins.AppCode
                     Conditions =
                     {
                         new ConditionExpression("category", ConditionOperator.Equal, 4),
+                        new ConditionExpression("businessprocesstype", ConditionOperator.Equal, 0),
                         new ConditionExpression("primaryentity", ConditionOperator.Equal, recordEntityToMigrate)
                     }
                 }
