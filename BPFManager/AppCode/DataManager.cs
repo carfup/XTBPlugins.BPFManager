@@ -235,7 +235,7 @@ namespace Carfup.XTBPlugins.AppCode
         public List<EntityDetailledName> GetEntitiesWithBPF()
         {
             if (entitiesMetadata == null)
-                retrieveMetadataEntity();
+                RetrieveMetadataEntity();
 
             var query = new QueryExpression()
             {
@@ -341,7 +341,7 @@ namespace Carfup.XTBPlugins.AppCode
             return metadata.EntityMetadata;
         }
 
-        public void retrieveMetadataEntity()
+        public void RetrieveMetadataEntity()
         {
             RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest()
             {
@@ -353,6 +353,36 @@ namespace Carfup.XTBPlugins.AppCode
             RetrieveAllEntitiesResponse response = (RetrieveAllEntitiesResponse)this.service.Execute(request);
 
             entitiesMetadata = response.EntityMetadata;
+        }
+
+        public string RetrieveReferencingAttributeOfBpf(string bfpEntityName, string recordEntityName)
+        {
+            var requestMetadataBpfEntity = new RetrieveEntityRequest()
+            {
+                EntityFilters = EntityFilters.Relationships,
+                LogicalName = bfpEntityName
+            };
+
+            var responseMetadataBpfEntity = (RetrieveEntityResponse)this.service.Execute(requestMetadataBpfEntity);
+            return responseMetadataBpfEntity.EntityMetadata.ManyToOneRelationships.FirstOrDefault(x => x.ReferencedEntity == recordEntityName).ReferencingAttribute;
+        }
+
+        public Entity GetExistingBpfInstance(string bpfEntityName, string referencingAttribute, Guid record) 
+        {
+            var queryUserViews = this.service.RetrieveMultiple(new QueryExpression()
+            {
+                EntityName = bpfEntityName,
+                ColumnSet = new ColumnSet(false),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(referencingAttribute, ConditionOperator.Equal, record)
+                    }
+                }
+            });
+
+            return queryUserViews.Entities.FirstOrDefault();
         }
     }
 

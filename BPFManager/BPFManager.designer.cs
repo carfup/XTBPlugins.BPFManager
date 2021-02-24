@@ -320,7 +320,7 @@
             this.labelHasPermissions.Name = "labelHasPermissions";
             this.labelHasPermissions.Size = new System.Drawing.Size(530, 50);
             this.labelHasPermissions.TabIndex = 4;
-            this.labelHasPermissions.Text = "Please make sure that all your active users \r\nhave the proper permissions on the " +
+            this.labelHasPermissions.Text = "Please make sure that you have the proper permissions on the " +
     "Target BPF";
             this.labelHasPermissions.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
