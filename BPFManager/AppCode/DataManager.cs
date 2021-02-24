@@ -10,16 +10,17 @@ using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Tooling.Connector;
 
 namespace Carfup.XTBPlugins.AppCode
 {
     public class DataManager
     {
-        public IOrganizationService service { get; set; } = null;
+        public CrmServiceClient service { get; set; } = null;
         public int recordToRetrieveEachRound = 5000;
         public EntityMetadata[] entitiesMetadata = null;
 
-        public DataManager(IOrganizationService service)
+        public DataManager(CrmServiceClient service)
         {
             this.service = service;
         }
@@ -84,6 +85,7 @@ namespace Carfup.XTBPlugins.AppCode
                             new string[] {"SYSTEM", "INTEGRATION"}),
                         new ConditionExpression("domainname", ConditionOperator.NotNull),
                         new ConditionExpression("domainname", ConditionOperator.NotEqual, ""),
+                        new ConditionExpression("domainname", ConditionOperator.NotEqual, "bap_sa@microsoft.com"),
                         new ConditionExpression("accessmode", ConditionOperator.NotIn, new string[] {"3", "5"}),
                     }
                 },
@@ -188,6 +190,32 @@ namespace Carfup.XTBPlugins.AppCode
             }).Entities.ToList();
         }
 
+        public List<Entity> GetExistingBPFInstances(string bpfEntityName, string relatedEntityName, Guid[] guidList)
+        {
+            var bpfMetadata = GetAttributeOfEntity(bpfEntityName);
+            
+            var relatedEntityNameModified = $"{relatedEntityName}id";
+
+            if(bpfMetadata.Attributes.FirstOrDefault(x => x.LogicalName == relatedEntityNameModified) == null)
+                relatedEntityNameModified = $"bpf_{relatedEntityName}id";
+
+            if (bpfMetadata.Attributes.FirstOrDefault(x => x.LogicalName == relatedEntityNameModified) == null)
+                throw new Exception("We couldn't figure out what is the proper primary fieldname of the BPF entity.");
+
+                return this.service.RetrieveMultiple(new QueryExpression()
+            {
+                EntityName = bpfEntityName,
+                ColumnSet = new ColumnSet("businessprocessflowinstanceid", relatedEntityNameModified),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(relatedEntityNameModified, ConditionOperator.In, guidList),
+                    }
+                }
+            }).Entities.ToList();
+        }
+
         public List<Entity> GetBPFStages(Guid bpfSelected)
         {
             return this.service.RetrieveMultiple(new QueryExpression()
@@ -207,7 +235,7 @@ namespace Carfup.XTBPlugins.AppCode
         public List<EntityDetailledName> GetEntitiesWithBPF()
         {
             if (entitiesMetadata == null)
-                retrieveMetadataEntity();
+                RetrieveMetadataEntity();
 
             var query = new QueryExpression()
             {
@@ -301,7 +329,19 @@ namespace Carfup.XTBPlugins.AppCode
             return metadata.EntityMetadata.PrimaryNameAttribute;
         }
 
-        public void retrieveMetadataEntity()
+        public EntityMetadata GetAttributeOfEntity(string entity)
+        {
+            var request = new RetrieveEntityRequest
+            {
+                EntityFilters = EntityFilters.Attributes,
+                LogicalName = entity
+            };
+
+            var metadata = (RetrieveEntityResponse)service.Execute(request);
+            return metadata.EntityMetadata;
+        }
+
+        public void RetrieveMetadataEntity()
         {
             RetrieveAllEntitiesRequest request = new RetrieveAllEntitiesRequest()
             {
@@ -313,6 +353,36 @@ namespace Carfup.XTBPlugins.AppCode
             RetrieveAllEntitiesResponse response = (RetrieveAllEntitiesResponse)this.service.Execute(request);
 
             entitiesMetadata = response.EntityMetadata;
+        }
+
+        public string RetrieveReferencingAttributeOfBpf(string bfpEntityName, string recordEntityName)
+        {
+            var requestMetadataBpfEntity = new RetrieveEntityRequest()
+            {
+                EntityFilters = EntityFilters.Relationships,
+                LogicalName = bfpEntityName
+            };
+
+            var responseMetadataBpfEntity = (RetrieveEntityResponse)this.service.Execute(requestMetadataBpfEntity);
+            return responseMetadataBpfEntity.EntityMetadata.ManyToOneRelationships.FirstOrDefault(x => x.ReferencedEntity == recordEntityName).ReferencingAttribute;
+        }
+
+        public Entity GetExistingBpfInstance(string bpfEntityName, string referencingAttribute, Guid record) 
+        {
+            var queryUserViews = this.service.RetrieveMultiple(new QueryExpression()
+            {
+                EntityName = bpfEntityName,
+                ColumnSet = new ColumnSet(false),
+                Criteria =
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression(referencingAttribute, ConditionOperator.Equal, record)
+                    }
+                }
+            });
+
+            return queryUserViews.Entities.FirstOrDefault();
         }
     }
 

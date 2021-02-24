@@ -1,9 +1,7 @@
 ﻿using Carfup.XTBPlugins.AppCode;
 using Carfup.XTBPlugins.Forms;
 using McTools.Xrm.Connection;
-using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
-using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Messages;
 using System;
 using System.Collections.Generic;
@@ -15,7 +13,6 @@ using System.Windows.Forms;
 using XrmToolBox.Extensibility;
 using XrmToolBox.Extensibility.Args;
 using XrmToolBox.Extensibility.Interfaces;
-using EntityReference = Microsoft.Xrm.Sdk.EntityReference;
 
 namespace Carfup.XTBPlugins.BPFManager
 {
@@ -56,7 +53,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
-            dm = new DataManager(newService);
+            dm = new DataManager(detail.ServiceClient);
             IsVersionSupported(detail);
 
             base.UpdateConnection(newService, detail, actionName, parameter);
@@ -188,9 +185,6 @@ namespace Carfup.XTBPlugins.BPFManager
                 Work = (bw, e) =>
                 {
                     recordToMigrateList = dm.GetRecordsToMigrate(fetchxmlQuery, bw);
-
-                    userList = dm.GetUsers(bw);
-                    //e.Result = this.Service.RetrieveMultiple(new FetchExpression(fetchxmlQuery)).Entities;
                 },
                 PostWorkCallBack = e =>
                 {
@@ -208,19 +202,11 @@ namespace Carfup.XTBPlugins.BPFManager
                         return;
                     }
 
-                    if (userList.Count == 0)
-                    {
-                        MessageBox.Show("You seem to have no active users on your instance.");
-                        tbRecordsRetrieved.Text = "";
-                        return;
-                    }
-
-
                     recordEntityToMigrate = recordToMigrateList.FirstOrDefault()?.LogicalName;
                     attributeName = dm.GetPrimaryNameAttributeOfEntity(recordToMigrateList.FirstOrDefault().LogicalName);
 
                     tbRecordsRetrieved.Text =
-                        $"We retrieved {recordToMigrateList.Count} records from {recordToMigrateList.FirstOrDefault()?.LogicalName} entity.{Environment.NewLine}{Environment.NewLine}We retrieved {userList.Count} active users.";
+                        $"We retrieved {recordToMigrateList.Count} records from {recordToMigrateList.FirstOrDefault()?.LogicalName} entity.";
 
                     //Enabling Load BPF button
                     btnLoadBPFs.Enabled = true;
@@ -228,7 +214,7 @@ namespace Carfup.XTBPlugins.BPFManager
                     this.log.LogData(EventType.Event, LogAction.RecordsToMigrateRetrieved);
 
 
-                    totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
+                    totalRecordToMigrate = recordToMigrateList.Count;
                     DisplayStatsMiddle();
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
@@ -361,9 +347,9 @@ namespace Carfup.XTBPlugins.BPFManager
         {
             if (cbTargetBPFStages.SelectedIndex == -1) return;
 
-            btnMigrateRecordBPF.Enabled = (cbTargetBPFStages.SelectedItem != null || cbTargetBPFStages.SelectedItem != "");
+            btnMigrateRecordBPF.Enabled = (cbTargetBPFStages.SelectedItem != null || cbTargetBPFStages.SelectedItem.ToString() != "");
 
-                if (recordToMigrateList != null && userList!= null && cbTargetBPFStages.SelectedItem != null &&
+                if (recordToMigrateList != null && cbTargetBPFStages.SelectedItem != null &&
                     cbTargetBPFList.SelectedItem != null)
                     btnMigrateRecordBPF.Enabled = true;
         }
@@ -373,12 +359,6 @@ namespace Carfup.XTBPlugins.BPFManager
             if (recordToMigrateList == null)
             {
                 MessageBox.Show("You need to load the records to migrate first.");
-                return false;
-            }
-
-            if (userList == null)
-            {
-                MessageBox.Show("You need to load the users first.");
                 return false;
             }
 
@@ -402,7 +382,7 @@ namespace Carfup.XTBPlugins.BPFManager
             if (!AllowMigrateButton())
                 return;
 
-            string bpfSelectedEntityTarget = bpfSelected.Attributes["uniquename"].ToString();
+            string bpfSelectedEntityTarget = bpfSelected.GetAttributeValue<string>("uniquename");
             var stageId = stageList.FirstOrDefault(w => w.Attributes["stagename"] == cbTargetBPFStages.SelectedItem);
             List<string> traversedpath = new List<string>();
             string targetStage = cbTargetBPFStages.SelectedItem.ToString();
@@ -410,7 +390,7 @@ namespace Carfup.XTBPlugins.BPFManager
             var totalRecordInstanced = 0;
             var totalRecordUpdated = 0;
             var totalSkipped = 0;
-            totalRecordToMigrate = userList.Count * recordToMigrateList.Count;
+            totalRecordToMigrate = recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
 
             manageEnablingOfControls(false);
@@ -422,13 +402,52 @@ namespace Carfup.XTBPlugins.BPFManager
 
             WorkAsync(new WorkAsyncInfo
             {
-                Message = $"Migrating the Business Process flows for each users and records {Environment.NewLine}May take a moment ...",
+                Message = $"Migrating the Business Process flows for each records {Environment.NewLine}May take a moment ...",
                 IsCancelable = true,
                 Work = (bw, e) =>
                 {
-                    var userProceed = 1;
-                    int progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
-                    foreach (var user in userList)
+                    List<Entity> retrieveExistingBPFInstances = null;
+                    try
+                    {
+                        retrieveExistingBPFInstances = dm.GetExistingBPFInstances(bpfSelected.GetAttributeValue<string>("uniquename"),
+                            recordToMigrateList.FirstOrDefault().LogicalName, recordToMigrateList.Select(x => x.Id).ToArray());
+                    }
+                    catch (Exception exception)
+                    {
+                        if (!continueOnPermissionError)
+                        {
+                            var result = MessageBox.Show(exception.Message, "Error during migration !",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+
+                            if (result == DialogResult.No)
+                                return;
+                            else if (result == DialogResult.Yes)
+                            {
+                                continueOnPermissionError = true;
+                            }
+                        }
+                    }
+                    int progress = ((totalRecordMigrated * 100) / totalRecordToMigrate);
+                    var bpfSelectedEntityName = bpfSelected.GetAttributeValue<string>("uniquename");
+
+                    // Get lookup field between record entity & bpf entity
+                    var referencingAttributeEntityBpf = this.dm.RetrieveReferencingAttributeOfBpf(bpfSelectedEntityName, recordEntityToMigrate);
+
+                    var recordInstanced = 0;
+                    var numberOfRecordsToProceed = recordToMigrateList.Count;
+
+                    var executeMultipleRequestSetBPF = new ExecuteMultipleRequest()
+                    {
+                        Settings = new ExecuteMultipleSettings()
+                        {
+                            ContinueOnError = false,
+                            ReturnResponses = true
+                        },
+                        Requests = new OrganizationRequestCollection()
+                    };
+
+                    // for each record to migrate
+                    foreach (var record in recordToMigrateList)
                     {
                         if (bw.CancellationPending)
                         {
@@ -436,170 +455,34 @@ namespace Carfup.XTBPlugins.BPFManager
                             break;
                         }
 
-                        var numberOfRecordsToProceed = recordToMigrateList.Count;
-                        var recordInstanced = 0;
-                        var recordUpdated = 0;
+                        var bpfInstanceExist = this.dm.GetExistingBpfInstance(bpfSelectedEntityName, referencingAttributeEntityBpf, record.Id);
 
-                        var executeMultipleRequestSetBPF = new ExecuteMultipleRequest()
+                        var bpfToUpdate = new Entity(bpfSelectedEntityName);
+                        if (bpfInstanceExist != null) bpfToUpdate.Id = bpfInstanceExist.Id;
+                        bpfToUpdate[referencingAttributeEntityBpf] = record.ToEntityReference();
+                        bpfToUpdate["activestageid"] = stageId.ToEntityReference();
+                        UpsertRequest upsertRequest = new UpsertRequest()
                         {
-                            Settings = new ExecuteMultipleSettings()
-                            {
-                                ContinueOnError = false,
-                                ReturnResponses = true
-                            },
-                            Requests = new OrganizationRequestCollection()
+                            Target = bpfToUpdate
                         };
 
-                        // Instancing the BPF first
-                        foreach (var record in recordToMigrateList)
+                        executeMultipleRequestSetBPF.Requests.Add(upsertRequest);
+
+                        totalRecordMigrated++;
+
+                        if (totalRecordMigrated % this.settings.NumberOfRecordPerRound == 0 || numberOfRecordsToProceed == totalRecordMigrated)
                         {
-                            if (bw.CancellationPending)
-                            {
-                                e.Cancel = true;
-                                break;
-                            }
-
-                            // Create the instance of the BPF on the record
-                            SetProcessRequest setProcReq = new SetProcessRequest
-                            {
-                                Target = record.ToEntityReference(),
-                                NewProcess = new EntityReference(bpfSelected.LogicalName, bpfSelected.Id)
-                            };
-                            executeMultipleRequestSetBPF.Requests.Add(setProcReq);
-
-                            recordInstanced++;
-                            totalRecordInstanced++;
-
-                            if (recordInstanced % this.settings.NumberOfRecordPerRound == 0 || numberOfRecordsToProceed == recordInstanced)
-                            {
-                                ExecuteMultipleRequestBPF(user.Id, ref executeMultipleRequestSetBPF, bw,
-                                    recordInstanced, userProceed, "instanced");
-                                progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
-                                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));                                
-                            }
+                            ExecuteMultipleRequestBPF(ref executeMultipleRequestSetBPF, bw,
+                                         totalRecordMigrated, 0, "updated");
+                            progress = ((totalRecordMigrated * 100) / totalRecordToMigrate);
+                            SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));
+                            bw?.ReportProgress(0, $"Processing business process flows {totalRecordMigrated}/{totalRecordToMigrate} migrated ...");
                         }
 
-
-                        var executeMultipleRequestUpdateBPF = new ExecuteMultipleRequest
+                        Invoke(new Action(() =>
                         {
-                            Settings = new ExecuteMultipleSettings
-                            {
-                                ContinueOnError = true,
-                                ReturnResponses = true
-                            },
-                            Requests = new OrganizationRequestCollection()
-                        };
-
-                        List<Entity> resultQueryProperBPF = null;
-                        //Updating the BPF stage + traversedpath 
-                        foreach (var record in recordToMigrateList)
-                        {
-                            if (bw.CancellationPending)
-                            {
-                                e.Cancel = true;
-                                break;
-                            }
-
-                            var attrForCondition = bpfSelectedEntityTarget.Contains("_") ? $"bpf_{record.LogicalName}id" : $"{record.LogicalName}id";
-
-                            // So we do it only once
-                            if(resultQueryProperBPF == null)
-                            {
-                                try
-                                {
-                                    resultQueryProperBPF = this.dm.GetProperBPFList(bpfSelectedEntityTarget,
-                                        recordToMigrateList, attrForCondition);
-                                }
-                                catch (Exception exception)
-                                {
-                                    if (!continueOnPermissionError)
-                                    {
-                                        var result = MessageBox.Show(exception.Message, "Error during migration !",
-                                            MessageBoxButtons.YesNo, MessageBoxIcon.Error);
-
-                                        if (result == DialogResult.No)
-                                            return;
-                                        else if (result == DialogResult.Yes)
-                                        {
-                                            continueOnPermissionError = true;
-                                            continue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        continue;
-                                    }
-                                }
-                            }
-
-                            var wantedBPFInstanceREcord = resultQueryProperBPF.FirstOrDefault(x => ((EntityReference)x.Attributes[attrForCondition]).Id == record.Id);
-
-                            if(wantedBPFInstanceREcord == null)
-                            {
-                                //migrationErrors.Add(record);
-                                continue;
-                            }
-
-                            // Preparing the traversedpath so we do it only once as it's the same path for all records
-                            if (traversedpath.Count == 0)
-                            {
-                                var activePathRequest = new RetrieveActivePathRequest
-                                {
-                                    ProcessInstanceId = wantedBPFInstanceREcord.Id
-                                };
-                                var activePathResponse =
-                                    (RetrieveActivePathResponse)this.Service.Execute(activePathRequest);
-
-                                var stageDefinitions =
-                                    ((EntityCollection)activePathResponse.Results.Values.FirstOrDefault())?.Entities;
-
-                                foreach (var path in stageDefinitions)
-                                {
-                                    traversedpath.Add(path.Id.ToString());
-
-                                    if (path.Attributes["stagename"].ToString() == targetStage)
-                                        break;
-                                }
-                            }
-
-                            var bpfInstance = new Entity()
-                            {
-                                LogicalName = wantedBPFInstanceREcord.LogicalName,
-                                Id = wantedBPFInstanceREcord.Id
-                            };
-                            bpfInstance["activestageid"] = new EntityReference(stageId.LogicalName, stageId.Id);
-                            bpfInstance["traversedpath"] = String.Join(",",traversedpath);
-
-                            UpdateRequest ur = new UpdateRequest()
-                            {
-                                Target = bpfInstance,
-                                ConcurrencyBehavior = ConcurrencyBehavior.AlwaysOverwrite
-                                
-                            };
-                            executeMultipleRequestUpdateBPF.Requests.Add(ur);
-
-                            recordUpdated++;
-                            totalRecordMigrated++;
-                            totalRecordUpdated++;
-
-                            if (totalRecordUpdated % this.settings.NumberOfRecordPerRound == 0 || numberOfRecordsToProceed == recordUpdated)
-                            {
-                                ExecuteMultipleRequestBPF(user.Id, ref executeMultipleRequestUpdateBPF, bw,
-                                    recordUpdated, userProceed, "updated", false);
-                                progress = ((((totalRecordUpdated + totalRecordInstanced) / 2) * 100) / totalRecordToMigrate);
-                                SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));
-                                
-                            }
-
-                            Invoke(new Action(() =>
-                            {
-                                labelRecordsRemaining.Text = $@"{totalRecordToMigrate - totalRecordMigrated}";
-                            }));
-                        }
-
-                        userProceed++;
-                        bw?.ReportProgress(0, $"Processing user {userProceed}/{userList.Count} ...{Environment.NewLine}Total records migrated : {totalRecordMigrated}");
-                        SendMessageToStatusBar(this, new StatusBarMessageEventArgs(progress, $"Migration in progress {progress}%  ..."));
+                            labelRecordsRemaining.Text = $@"{totalRecordToMigrate - totalRecordMigrated}";
+                        }));
                     }
 
                     e.Result = totalRecordMigrated;
@@ -639,21 +522,12 @@ namespace Carfup.XTBPlugins.BPFManager
             });
         }
 
-        public void ExecuteMultipleRequestBPF(Guid userId,  ref ExecuteMultipleRequest executeMultipleRequestSetBPF, BackgroundWorker bw, int number, int userProceed, string text, bool impersonate = true)
+        public void ExecuteMultipleRequestBPF(ref ExecuteMultipleRequest executeMultipleRequestSetBPF, BackgroundWorker bw, int number, int userProceed, string text)
         {
             ExecuteMultipleResponse executeMultipleResponse = null;
             try
             {
-                if (impersonate)
-                {
-                    var proxy = (OrganizationServiceProxy)this.Service;
-                    proxy.CallerId = userId;
-                    executeMultipleResponse = (ExecuteMultipleResponse)proxy.Execute(executeMultipleRequestSetBPF);
-                }
-                else
-                {
-                    executeMultipleResponse = (ExecuteMultipleResponse)this.Service.Execute(executeMultipleRequestSetBPF);
-                }
+               executeMultipleResponse = (ExecuteMultipleResponse)this.dm.service.Execute(executeMultipleRequestSetBPF);
             }
             catch (Exception e)
             {
@@ -685,7 +559,7 @@ namespace Carfup.XTBPlugins.BPFManager
                 Requests = new OrganizationRequestCollection()
             };
             
-            bw?.ReportProgress(0, $"Processing user {userProceed}/{userList.Count} ...{Environment.NewLine}{number} business process flows {text}");   
+            bw?.ReportProgress(0, $"Processing business process flows : {number}  {text}");   
         }
 
         private void radioButtonBuildQuery_CheckedChanged(object sender, EventArgs e)

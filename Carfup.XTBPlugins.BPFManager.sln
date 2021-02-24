@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.489
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BPFManager", "BPFManager\BPFManager.csproj", "{691362FD-D2EF-4D67-8283-C19A1F3DBCE7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BPFManager.Test", "BPFManager.Test\BPFManager.Test.csproj", "{7778D8C8-B72F-4CD4-B1E6-ECB0134A780A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{691362FD-D2EF-4D67-8283-C19A1F3DBCE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{691362FD-D2EF-4D67-8283-C19A1F3DBCE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{691362FD-D2EF-4D67-8283-C19A1F3DBCE7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7778D8C8-B72F-4CD4-B1E6-ECB0134A780A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7778D8C8-B72F-4CD4-B1E6-ECB0134A780A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7778D8C8-B72F-4CD4-B1E6-ECB0134A780A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7778D8C8-B72F-4CD4-B1E6-ECB0134A780A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

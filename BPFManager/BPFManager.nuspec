@@ -1,7 +1,7 @@
 ﻿<package>
   <metadata>
     <id>Carfup.XTBPlugins.BPFManager</id>
-    <version>1.2019.4.4</version>
+    <version>1.2021.2.6</version>
     <title>BPF Manager</title>
     <authors>Clement Olivier and Gus Gonzalez</authors>
     <owners>Clement Olivier and Gus Gonzalez</owners>
@@ -11,6 +11,14 @@
     <description>This tool allows you to set an active business process flow stage for records in bulk. Use this after a data import, or simply to switch stages from an old BPF into a new one.</description>
     <summary>Use this tool to set the Active BPF stage for records in Bulk.</summary>
     <releaseNotes>
+1.2021.2.6
+  Improving the process: the tool loops on all records only, no need to take care of every users anymore.
+  Few bug fixing.
+
+1.2019.6.5
+  Fix migration with out of the box business process flows
+  Aligned the new XrmToolBox to use impersonation
+  
 1.2019.4.4
   Major issue fixed which was blocking the whole process
   Improvement of background process
