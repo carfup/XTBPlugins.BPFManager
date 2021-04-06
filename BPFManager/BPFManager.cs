@@ -362,13 +362,13 @@ namespace Carfup.XTBPlugins.BPFManager
                 return false;
             }
 
-            if (cbTargetBPFStages.SelectedItem == "" || cbTargetBPFStages.SelectedItem == null)
+            if (cbTargetBPFStages.SelectedItem == null || cbTargetBPFStages.GetItemText(cbTargetBPFStages.SelectedItem) == "")
             {
                 MessageBox.Show("You need to select a target Business process flow first.");
                 return false;
             }
 
-            if (cbTargetBPFList.SelectedItem == "" || cbTargetBPFList.SelectedItem == null)
+            if (cbTargetBPFList.SelectedItem == null || cbTargetBPFStages.GetItemText(cbTargetBPFList.SelectedItem) == "")
             {
                 MessageBox.Show("You need to select a target Business process flow Stage first.");
                 return false;
