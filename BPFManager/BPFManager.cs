@@ -387,9 +387,6 @@ namespace Carfup.XTBPlugins.BPFManager
             List<string> traversedpath = new List<string>();
             string targetStage = cbTargetBPFStages.SelectedItem.ToString();
             var totalRecordMigrated = 0;
-            var totalRecordInstanced = 0;
-            var totalRecordUpdated = 0;
-            var totalSkipped = 0;
             totalRecordToMigrate = recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
 
@@ -433,7 +430,6 @@ namespace Carfup.XTBPlugins.BPFManager
                     // Get lookup field between record entity & bpf entity
                     var referencingAttributeEntityBpf = this.dm.RetrieveReferencingAttributeOfBpf(bpfSelectedEntityName, recordEntityToMigrate);
 
-                    var recordInstanced = 0;
                     var numberOfRecordsToProceed = recordToMigrateList.Count;
 
                     var executeMultipleRequestSetBPF = new ExecuteMultipleRequest()
