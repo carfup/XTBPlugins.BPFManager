@@ -11,6 +11,8 @@ using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
 using Microsoft.Xrm.Tooling.Connector;
+using Newtonsoft.Json.Linq;
+using ScintillaNET;
 
 namespace Carfup.XTBPlugins.AppCode
 {
@@ -175,19 +177,58 @@ namespace Carfup.XTBPlugins.AppCode
 
         public List<Entity> GetRelatedBPF(string recordEntityToMigrate)
         {
-            return this.service.RetrieveMultiple(new QueryExpression()
+            List<Entity> workflowsToKeep = new List<Entity>();
+            var potentialWorkdlows = service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("name","uniquename"),
+                ColumnSet = new ColumnSet("name", "uniquename", "uidata", "primaryentity", "name"),
                 Criteria =
                 {
-                    Conditions =
+                    Filters =
                     {
-                        new ConditionExpression("category", ConditionOperator.Equal, 4),
-                        new ConditionExpression("primaryentity", ConditionOperator.Equal, recordEntityToMigrate)
+                        new FilterExpression()
+                        {
+                            FilterOperator = LogicalOperator.Or,
+                            Filters =
+                            {
+                                new FilterExpression()
+                                {
+                                    Conditions =
+                                    {
+                                        new ConditionExpression("category", ConditionOperator.Equal, 4),
+                                        new ConditionExpression("primaryentity", ConditionOperator.Equal, recordEntityToMigrate)
+                                    }
+                                },
+                                new FilterExpression()
+                                {
+                                    Conditions =
+                                    {
+                                        new ConditionExpression("uidata", ConditionOperator.Like, $"%EntityLogicalName\":\"{recordEntityToMigrate}%")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }).Entities.ToList();
+
+
+            foreach (var potentialWorkflow in potentialWorkdlows)
+            {
+                if (!potentialWorkflow.Contains("uidata"))
+                    continue;
+
+                var jsonDefinition = JObject.Parse(potentialWorkflow.GetAttributeValue<string>("uidata"));
+                var extendedEntity =
+                    jsonDefinition.SelectTokens(
+                        $"$.BusinessProcessFlowEntities.['$values'][?(@.EntityLogicalName == '{recordEntityToMigrate}')]");
+
+                if (potentialWorkflow.GetAttributeValue<string>("primaryentity") == recordEntityToMigrate ||
+                   extendedEntity?.Count() > 0)
+                    workflowsToKeep.Add(potentialWorkflow);
+            }
+
+            return workflowsToKeep;
         }
 
         public List<Entity> GetExistingBPFInstances(string bpfEntityName, string relatedEntityName, Guid[] guidList)
