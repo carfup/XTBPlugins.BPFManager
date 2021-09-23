@@ -21,10 +21,12 @@ namespace Carfup.XTBPlugins.AppCode
         public CrmServiceClient service { get; set; } = null;
         public int recordToRetrieveEachRound = 5000;
         public EntityMetadata[] entitiesMetadata = null;
+        public int majorVersion = 9;
 
-        public DataManager(CrmServiceClient service)
+        public DataManager(CrmServiceClient service, int majorVersion)
         {
             this.service = service;
+            this.majorVersion = majorVersion;
         }
 
         public List<Entity> GetRecordsToMigrate(string fetchXmlQuery, BackgroundWorker worker = null)
@@ -59,14 +61,7 @@ namespace Carfup.XTBPlugins.AppCode
 
 
                 recordToMigrate.AddRange(ec.Entities);
-                //foreach (var record in ec.Entities)
-                //{
-                //    recordToMigrate.Add(record);
-
-                //}
             } while (ec.MoreRecords /*&& Cancel == false*/);
-
-            //var result = this.service.RetrieveMultiple(query);
 
             return recordToMigrate;
         }
@@ -178,10 +173,27 @@ namespace Carfup.XTBPlugins.AppCode
         public List<Entity> GetRelatedBPF(string recordEntityToMigrate)
         {
             List<Entity> workflowsToKeep = new List<Entity>();
+
+            ColumnSet cols = new ColumnSet("name", "uniquename", "primaryentity");  
+            FilterExpression filter = null;
+
+            if (majorVersion >= 9)
+            {
+                cols.AddColumn("uidata");
+                filter = new FilterExpression()
+                {
+                    Conditions =
+                    {
+                        new ConditionExpression("uidata", ConditionOperator.Like,
+                            $"%EntityLogicalName\":\"{recordEntityToMigrate}%")
+                    }
+                };
+            }
+
             var potentialWorkdlows = service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("name", "uniquename", "uidata", "primaryentity", "name"),
+                ColumnSet = new ColumnSet("name", "uniquename", "uidata", "primaryentity"),
                 Criteria =
                 {
                     Filters =
@@ -199,13 +211,7 @@ namespace Carfup.XTBPlugins.AppCode
                                         new ConditionExpression("primaryentity", ConditionOperator.Equal, recordEntityToMigrate)
                                     }
                                 },
-                                new FilterExpression()
-                                {
-                                    Conditions =
-                                    {
-                                        new ConditionExpression("uidata", ConditionOperator.Like, $"%EntityLogicalName\":\"{recordEntityToMigrate}%")
-                                    }
-                                }
+                                filter
                             }
                         }
                     }
@@ -278,10 +284,18 @@ namespace Carfup.XTBPlugins.AppCode
             if (entitiesMetadata == null)
                 RetrieveMetadataEntity();
 
+            ColumnSet cols = new ColumnSet( "primaryentity");
+            FilterExpression filter = null;
+
+            if (majorVersion >= 9)
+            {
+                cols.AddColumn("uidata");
+            }
+
             var query = new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("primaryentity"),
+                ColumnSet = cols,
                 Criteria =
                 {
                     Conditions =
@@ -294,14 +308,44 @@ namespace Carfup.XTBPlugins.AppCode
             var result = this.service.RetrieveMultiple(query).Entities;
 
             List<EntityDetailledName> edn = new List<EntityDetailledName>();
-            foreach (var r in result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key))
+            //foreach (var r in result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key))
+            foreach(var r in result.ToList())
             {
-                edn.Add(new EntityDetailledName()
+                if (r.Contains("uidata"))
                 {
-                    logicalName = r,
-                    schemaName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r)?.SchemaName,
-                    displayName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r)?.DisplayName.UserLocalizedLabel.Label
-                });
+                    var jsonDefinition = JObject.Parse(r.GetAttributeValue<string>("uidata"));
+                    var relatedEntities =
+                        jsonDefinition.SelectTokens(
+                            $"$.BusinessProcessFlowEntities.['$values']..EntityLogicalName");
+
+                    foreach (var entity in relatedEntities.GroupBy(x => x).Select(x => (string)x.Key))
+                    {
+                        if (edn.Any(x => x.logicalName == entity))
+                            continue;
+
+                        edn.Add(new EntityDetailledName()
+                        {
+                            logicalName = entity,
+                            schemaName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == entity)?.SchemaName,
+                            displayName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == entity)?.DisplayName.UserLocalizedLabel.Label
+                        });
+                    }
+                }
+                else
+                {
+                    if (edn.Any(x => x.logicalName == r.GetAttributeValue<string>("primaryentity")))
+                        continue;
+
+                    edn.Add(new EntityDetailledName()
+                    {
+                        logicalName = r.GetAttributeValue<string>("primaryentity"),
+                        schemaName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r.GetAttributeValue<string>("primaryentity"))?.SchemaName,
+                        displayName = entitiesMetadata.FirstOrDefault(x => x.LogicalName == r.GetAttributeValue<string>("primaryentity"))?.DisplayName.UserLocalizedLabel.Label
+                    });
+                }
+                
+
+                
             }
 
             return edn; //result.GroupBy(x => x.Attributes["primaryentity"]).Select(w => (string)w.Key).ToArray();

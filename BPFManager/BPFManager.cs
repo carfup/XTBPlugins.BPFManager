@@ -53,7 +53,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
-            dm = new DataManager(detail.ServiceClient);
+            dm = new DataManager(detail.ServiceClient, detail.OrganizationMajorVersion);
             IsVersionSupported(detail);
 
             base.UpdateConnection(newService, detail, actionName, parameter);
