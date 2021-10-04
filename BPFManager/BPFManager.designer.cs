@@ -69,6 +69,10 @@
             this.cbTargetBPFStages = new System.Windows.Forms.ComboBox();
             this.label5 = new System.Windows.Forms.Label();
             this.btnMigrateRecordBPF = new System.Windows.Forms.Button();
+            this.panel5 = new System.Windows.Forms.Panel();
+            this.rbEnabledDisabledRecordsNo = new System.Windows.Forms.RadioButton();
+            this.rbEnabledDisabledRecordsYes = new System.Windows.Forms.RadioButton();
+            this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.comboBox5 = new System.Windows.Forms.ComboBox();
             this.toolStripMenu.SuspendLayout();
@@ -85,6 +89,7 @@
             this.gpMigration.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.panel2.SuspendLayout();
+            this.panel5.SuspendLayout();
             this.SuspendLayout();
             // 
             // toolStripMenu
@@ -539,11 +544,13 @@
             this.tableLayoutPanel3.ColumnCount = 1;
             this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel3.Controls.Add(this.panel2, 0, 0);
-            this.tableLayoutPanel3.Controls.Add(this.btnMigrateRecordBPF, 0, 1);
+            this.tableLayoutPanel3.Controls.Add(this.btnMigrateRecordBPF, 0, 2);
+            this.tableLayoutPanel3.Controls.Add(this.panel5, 0, 1);
             this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 23);
             this.tableLayoutPanel3.Margin = new System.Windows.Forms.Padding(2);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
             this.tableLayoutPanel3.RowCount = 2;
+            this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel3.Size = new System.Drawing.Size(263, 384);
@@ -578,7 +585,7 @@
             this.lblTargetStageEntityDiff.TabIndex = 19;
             this.lblTargetStageEntityDiff.Text = "Target Entity stage and Primary Entity of the BPF are different.\r\nMake sure the r" +
     "elated Lookup is filled before moving the this stage.\r\n";
-            this.lblTargetStageEntityDiff.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.lblTargetStageEntityDiff.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.lblTargetStageEntityDiff.Visible = false;
             // 
             // btnLoadBPFs
@@ -649,14 +656,59 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.btnMigrateRecordBPF.Enabled = false;
-            this.btnMigrateRecordBPF.Location = new System.Drawing.Point(2, 156);
+            this.btnMigrateRecordBPF.Location = new System.Drawing.Point(2, 200);
             this.btnMigrateRecordBPF.Margin = new System.Windows.Forms.Padding(2);
             this.btnMigrateRecordBPF.Name = "btnMigrateRecordBPF";
-            this.btnMigrateRecordBPF.Size = new System.Drawing.Size(259, 226);
+            this.btnMigrateRecordBPF.Size = new System.Drawing.Size(259, 182);
             this.btnMigrateRecordBPF.TabIndex = 19;
             this.btnMigrateRecordBPF.Text = "Migrate !";
             this.btnMigrateRecordBPF.UseVisualStyleBackColor = true;
             this.btnMigrateRecordBPF.Click += new System.EventHandler(this.btnMigrateRecordBPF_Click);
+            // 
+            // panel5
+            // 
+            this.panel5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel5.Controls.Add(this.rbEnabledDisabledRecordsNo);
+            this.panel5.Controls.Add(this.rbEnabledDisabledRecordsYes);
+            this.panel5.Controls.Add(this.label2);
+            this.panel5.Location = new System.Drawing.Point(3, 157);
+            this.panel5.Name = "panel5";
+            this.panel5.Size = new System.Drawing.Size(257, 38);
+            this.panel5.TabIndex = 20;
+            // 
+            // rbEnabledDisabledRecordsNo
+            // 
+            this.rbEnabledDisabledRecordsNo.AutoSize = true;
+            this.rbEnabledDisabledRecordsNo.Checked = true;
+            this.rbEnabledDisabledRecordsNo.Enabled = false;
+            this.rbEnabledDisabledRecordsNo.Location = new System.Drawing.Point(206, 9);
+            this.rbEnabledDisabledRecordsNo.Name = "rbEnabledDisabledRecordsNo";
+            this.rbEnabledDisabledRecordsNo.Size = new System.Drawing.Size(39, 17);
+            this.rbEnabledDisabledRecordsNo.TabIndex = 2;
+            this.rbEnabledDisabledRecordsNo.TabStop = true;
+            this.rbEnabledDisabledRecordsNo.Text = "No";
+            this.rbEnabledDisabledRecordsNo.UseVisualStyleBackColor = true;
+            // 
+            // rbEnabledDisabledRecordsYes
+            // 
+            this.rbEnabledDisabledRecordsYes.AutoSize = true;
+            this.rbEnabledDisabledRecordsYes.Enabled = false;
+            this.rbEnabledDisabledRecordsYes.Location = new System.Drawing.Point(250, 9);
+            this.rbEnabledDisabledRecordsYes.Name = "rbEnabledDisabledRecordsYes";
+            this.rbEnabledDisabledRecordsYes.Size = new System.Drawing.Size(43, 17);
+            this.rbEnabledDisabledRecordsYes.TabIndex = 1;
+            this.rbEnabledDisabledRecordsYes.Text = "Yes";
+            this.rbEnabledDisabledRecordsYes.UseVisualStyleBackColor = true;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(6, 11);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(198, 13);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "Enable disabled records/aborted BPFs ?";
             // 
             // label3
             // 
@@ -708,6 +760,8 @@
             this.tableLayoutPanel3.PerformLayout();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
+            this.panel5.ResumeLayout(false);
+            this.panel5.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -757,5 +811,9 @@
         private System.Windows.Forms.ToolStripButton tsbCancel;
         private System.Windows.Forms.ToolStripSeparator tssCancel;
         private System.Windows.Forms.Label lblTargetStageEntityDiff;
+        private System.Windows.Forms.Panel panel5;
+        private System.Windows.Forms.RadioButton rbEnabledDisabledRecordsNo;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.RadioButton rbEnabledDisabledRecordsYes;
     }
 }

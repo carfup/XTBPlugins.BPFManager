@@ -33,6 +33,7 @@ namespace Carfup.XTBPlugins.AppCode
         {
             List<Entity> recordToMigrate = new List<Entity>();
             QueryExpression query = ConvertFetchXMLtoQueryExpression(fetchXmlQuery);
+            query.ColumnSet.AddColumn("statecode");
             query.NoLock = true;
 
             if(query.TopCount == null)
@@ -457,7 +458,7 @@ namespace Carfup.XTBPlugins.AppCode
             var queryUserViews = this.service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = bpfEntityName,
-                ColumnSet = new ColumnSet(false),
+                ColumnSet = new ColumnSet("statecode"),
                 Criteria =
                 {
                     Conditions =

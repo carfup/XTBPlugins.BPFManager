@@ -105,6 +105,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
             //displaying the proper control for query
             radioButtonQueryView.Checked = true;
+            rbEnabledDisabledRecordsNo.Checked = true;
         }
     
         private void LoadSetting()
@@ -353,6 +354,8 @@ namespace Carfup.XTBPlugins.BPFManager
                 cbTargetBPFList.SelectedItem != null)
             {
                 btnMigrateRecordBPF.Enabled = true;
+                rbEnabledDisabledRecordsNo.Enabled = true;
+                rbEnabledDisabledRecordsYes.Enabled = true;
 
                 string targetStage = cbTargetBPFStages.SelectedItem.ToString().Split('(')[0];
                 targetStage = targetStage.Remove(targetStage.Length - 1);
@@ -459,10 +462,40 @@ namespace Carfup.XTBPlugins.BPFManager
 
                         var bpfInstanceExist = this.dm.GetExistingBpfInstance(bpfSelectedEntityName, referencingAttributeEntityBpf, record.Id);
 
+                        if (rbEnabledDisabledRecordsYes.Checked)
+                        {
+                            if (record.GetAttributeValue<OptionSetValue>("statecode").Value == 1) { 
+                                record["statecode"] = new OptionSetValue(0);
+                                UpsertRequest activateRecordRequest = new UpsertRequest()
+                                {
+                                    Target = record
+                                };
+
+                                executeMultipleRequestSetBPF.Requests.Add(activateRecordRequest);
+                            }
+
+                            if (bpfInstanceExist != null && bpfInstanceExist.GetAttributeValue<OptionSetValue>("statecode").Value == 1)
+                            {
+                                var bpfToUpdateActivate = new Entity(bpfSelectedEntityName);
+                                bpfToUpdateActivate.Id = bpfInstanceExist.Id;
+
+                                bpfToUpdateActivate["statecode"] = new OptionSetValue(0);
+                                bpfToUpdateActivate["statuscode"] = new OptionSetValue(1);
+
+                                UpsertRequest upsertRequestBPFActivation = new UpsertRequest()
+                                {
+                                    Target = bpfToUpdateActivate
+                                };
+
+                                executeMultipleRequestSetBPF.Requests.Add(upsertRequestBPFActivation);
+                            }
+                        }
+
                         var bpfToUpdate = new Entity(bpfSelectedEntityName);
                         if (bpfInstanceExist != null) bpfToUpdate.Id = bpfInstanceExist.Id;
                         bpfToUpdate[referencingAttributeEntityBpf] = record.ToEntityReference();
                         bpfToUpdate["activestageid"] = bpfStageSelected.ToEntityReference();
+
                         UpsertRequest upsertRequest = new UpsertRequest()
                         {
                             Target = bpfToUpdate
@@ -747,11 +780,19 @@ namespace Carfup.XTBPlugins.BPFManager
             tsbCancel.Visible = !enabled;
             tssCancel.Visible = !enabled;
             pictureBoxPatience.Visible = !enabled;
+            rbEnabledDisabledRecordsNo.Enabled = enabled;
+            rbEnabledDisabledRecordsYes.Enabled = enabled;
+
         }
 
         private void tsbCancel_Click(object sender, EventArgs e)
         {
             CancelWorker();
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
