@@ -26,6 +26,7 @@ namespace Carfup.XTBPlugins.BPFManager
         private List<Entity> entityViews = null;
         private List<MigrationError> migrationErrors = null;
         private Entity bpfSelected = null;
+        private Entity bpfStageSelected = null;
         private MessageBusEventArgs callerArgs = null;
         private string fetchxmlQuery = null;
         private string recordEntityToMigrate = null;
@@ -53,7 +54,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
         public override void UpdateConnection(IOrganizationService newService, ConnectionDetail detail, string actionName, object parameter)
         {
-            dm = new DataManager(detail.ServiceClient);
+            dm = new DataManager(detail.ServiceClient, detail.OrganizationMajorVersion);
             IsVersionSupported(detail);
 
             base.UpdateConnection(newService, detail, actionName, parameter);
@@ -104,6 +105,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
             //displaying the proper control for query
             radioButtonQueryView.Checked = true;
+            rbEnabledDisabledRecordsNo.Checked = true;
         }
     
         private void LoadSetting()
@@ -290,7 +292,7 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     foreach (var record in bpfList)
                     {
-                        cbTargetBPFList.Items.Add(record.Attributes["name"]);
+                        cbTargetBPFList.Items.Add(record.GetAttributeValue<string>("name"));
                     }
 
                     cbTargetBPFList.Enabled = true;
@@ -305,7 +307,8 @@ namespace Carfup.XTBPlugins.BPFManager
             cbTargetBPFStages.Items.Clear();
             cbTargetBPFStages.SelectedIndex = -1;
             stageList = new List<Entity>();
-            bpfSelected = bpfList.FirstOrDefault(x => x.Attributes["name"] == cbTargetBPFList.SelectedItem);
+            bpfSelected = bpfList.FirstOrDefault(x => x.GetAttributeValue<string>("name") == cbTargetBPFList.SelectedItem.ToString());
+            lblTargetStageEntityDiff.Visible = false;
 
             WorkAsync(new WorkAsyncInfo
             {
@@ -331,9 +334,7 @@ namespace Carfup.XTBPlugins.BPFManager
                     }
 
                     foreach (var stage in stageList)
-                    {
-                        cbTargetBPFStages.Items.Add(stage.Attributes["stagename"]);
-                    }
+                        cbTargetBPFStages.Items.Add($"{stage.GetAttributeValue<string>("stagename")} ({stage.GetAttributeValue<string>("primaryentitytypecode")})");
 
                     cbTargetBPFStages.Enabled = true;
 
@@ -349,9 +350,20 @@ namespace Carfup.XTBPlugins.BPFManager
 
             btnMigrateRecordBPF.Enabled = (cbTargetBPFStages.SelectedItem != null || cbTargetBPFStages.SelectedItem.ToString() != "");
 
-                if (recordToMigrateList != null && cbTargetBPFStages.SelectedItem != null &&
-                    cbTargetBPFList.SelectedItem != null)
-                    btnMigrateRecordBPF.Enabled = true;
+            if (recordToMigrateList != null && cbTargetBPFStages.SelectedItem != null &&
+                cbTargetBPFList.SelectedItem != null)
+            {
+                btnMigrateRecordBPF.Enabled = true;
+                rbEnabledDisabledRecordsNo.Enabled = true;
+                rbEnabledDisabledRecordsYes.Enabled = true;
+
+                string targetStage = cbTargetBPFStages.SelectedItem.ToString().Split('(')[0];
+                targetStage = targetStage.Remove(targetStage.Length - 1);
+                bpfStageSelected = stageList.FirstOrDefault(w => w.GetAttributeValue<string>("stagename") == targetStage);
+
+                lblTargetStageEntityDiff.Visible = bpfSelected.GetAttributeValue<string>("primaryentity") != bpfStageSelected.GetAttributeValue<string>("primaryentitytypecode");
+            }
+                
         }
 
         public bool AllowMigrateButton()
@@ -382,10 +394,7 @@ namespace Carfup.XTBPlugins.BPFManager
             if (!AllowMigrateButton())
                 return;
 
-            string bpfSelectedEntityTarget = bpfSelected.GetAttributeValue<string>("uniquename");
-            var stageId = stageList.FirstOrDefault(w => w.Attributes["stagename"] == cbTargetBPFStages.SelectedItem);
             List<string> traversedpath = new List<string>();
-            string targetStage = cbTargetBPFStages.SelectedItem.ToString();
             var totalRecordMigrated = 0;
             totalRecordToMigrate = recordToMigrateList.Count;
             migrationErrors = new List<MigrationError>();
@@ -453,10 +462,40 @@ namespace Carfup.XTBPlugins.BPFManager
 
                         var bpfInstanceExist = this.dm.GetExistingBpfInstance(bpfSelectedEntityName, referencingAttributeEntityBpf, record.Id);
 
+                        if (rbEnabledDisabledRecordsYes.Checked)
+                        {
+                            if (record.GetAttributeValue<OptionSetValue>("statecode").Value == 1) { 
+                                record["statecode"] = new OptionSetValue(0);
+                                UpsertRequest activateRecordRequest = new UpsertRequest()
+                                {
+                                    Target = record
+                                };
+
+                                executeMultipleRequestSetBPF.Requests.Add(activateRecordRequest);
+                            }
+
+                            if (bpfInstanceExist != null && bpfInstanceExist.GetAttributeValue<OptionSetValue>("statecode").Value == 1)
+                            {
+                                var bpfToUpdateActivate = new Entity(bpfSelectedEntityName);
+                                bpfToUpdateActivate.Id = bpfInstanceExist.Id;
+
+                                bpfToUpdateActivate["statecode"] = new OptionSetValue(0);
+                                bpfToUpdateActivate["statuscode"] = new OptionSetValue(1);
+
+                                UpsertRequest upsertRequestBPFActivation = new UpsertRequest()
+                                {
+                                    Target = bpfToUpdateActivate
+                                };
+
+                                executeMultipleRequestSetBPF.Requests.Add(upsertRequestBPFActivation);
+                            }
+                        }
+
                         var bpfToUpdate = new Entity(bpfSelectedEntityName);
                         if (bpfInstanceExist != null) bpfToUpdate.Id = bpfInstanceExist.Id;
                         bpfToUpdate[referencingAttributeEntityBpf] = record.ToEntityReference();
-                        bpfToUpdate["activestageid"] = stageId.ToEntityReference();
+                        bpfToUpdate["activestageid"] = bpfStageSelected.ToEntityReference();
+
                         UpsertRequest upsertRequest = new UpsertRequest()
                         {
                             Target = bpfToUpdate
@@ -628,9 +667,9 @@ namespace Carfup.XTBPlugins.BPFManager
 
                     entityViews.AddRange(systemViews.Union(personalViews));
                     comboBoxChooseView.Items.Add("####### System Views #######");
-                    comboBoxChooseView.Items.AddRange(systemViews.Select(x => x.Attributes["name"]).OrderBy(x => x).ToArray());
+                    comboBoxChooseView.Items.AddRange(systemViews.Select(x => x.GetAttributeValue<string>("name")).OrderBy(x => x).ToArray());
                     comboBoxChooseView.Items.Add("####### Personal Views #######");
-                    comboBoxChooseView.Items.AddRange(personalViews.Select(x => x.Attributes["name"]).OrderBy(x => x).ToArray());
+                    comboBoxChooseView.Items.AddRange(personalViews.Select(x => x.GetAttributeValue<string>("name")).OrderBy(x => x).ToArray());
                     this.log.LogData(EventType.Event, LogAction.BPFEntityViewsRetrieved);
                 },
                 ProgressChanged = e => { SetWorkingMessage(e.UserState.ToString()); }
@@ -690,7 +729,7 @@ namespace Carfup.XTBPlugins.BPFManager
                 return;
             }
 
-            var selectedView = entityViews.FirstOrDefault(x => x.Attributes["name"] == comboBoxChooseView.SelectedItem);
+            var selectedView = entityViews.FirstOrDefault(x => x.GetAttributeValue<string>("name") == comboBoxChooseView.SelectedItem);
             fetchxmlQuery = selectedView.GetAttributeValue<string>("fetchxml");
 
             btnRetrieveRecordsFetchQuery.Enabled = !String.IsNullOrEmpty(fetchxmlQuery);
@@ -741,11 +780,19 @@ namespace Carfup.XTBPlugins.BPFManager
             tsbCancel.Visible = !enabled;
             tssCancel.Visible = !enabled;
             pictureBoxPatience.Visible = !enabled;
+            rbEnabledDisabledRecordsNo.Enabled = enabled;
+            rbEnabledDisabledRecordsYes.Enabled = enabled;
+
         }
 
         private void tsbCancel_Click(object sender, EventArgs e)
         {
             CancelWorker();
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }
