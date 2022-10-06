@@ -194,7 +194,7 @@ namespace Carfup.XTBPlugins.AppCode
             var potentialWorkdlows = service.RetrieveMultiple(new QueryExpression()
             {
                 EntityName = "workflow",
-                ColumnSet = new ColumnSet("name", "uniquename", "uidata", "primaryentity"),
+                ColumnSet = cols,
                 Criteria =
                 {
                     Filters =
@@ -223,7 +223,10 @@ namespace Carfup.XTBPlugins.AppCode
             foreach (var potentialWorkflow in potentialWorkdlows)
             {
                 if (!potentialWorkflow.Contains("uidata"))
+                {
+                    workflowsToKeep.Add(potentialWorkflow);
                     continue;
+                }
 
                 var jsonDefinition = JObject.Parse(potentialWorkflow.GetAttributeValue<string>("uidata"));
                 var extendedEntity =
@@ -286,7 +289,6 @@ namespace Carfup.XTBPlugins.AppCode
                 RetrieveMetadataEntity();
 
             ColumnSet cols = new ColumnSet( "primaryentity");
-            FilterExpression filter = null;
 
             if (majorVersion >= 9)
             {
