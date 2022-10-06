@@ -729,7 +729,7 @@ namespace Carfup.XTBPlugins.BPFManager
                 return;
             }
 
-            var selectedView = entityViews.FirstOrDefault(x => x.GetAttributeValue<string>("name") == comboBoxChooseView.SelectedItem);
+            var selectedView = entityViews.FirstOrDefault(x => x.GetAttributeValue<string>("name") == comboBoxChooseView.SelectedItem.ToString());
             fetchxmlQuery = selectedView.GetAttributeValue<string>("fetchxml");
 
             btnRetrieveRecordsFetchQuery.Enabled = !String.IsNullOrEmpty(fetchxmlQuery);
@@ -790,9 +790,5 @@ namespace Carfup.XTBPlugins.BPFManager
             CancelWorker();
         }
 
-        private void radioButton1_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
     }
 }
